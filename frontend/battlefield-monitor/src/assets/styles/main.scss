@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// Variables
+$primary-color: #3b82f6;
+$secondary-color: #64748b;
+$sidebar-width: 250px;
+
+// Base styles
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+// Component styles
+.sidebar {
+  width: $sidebar-width;
+  
+  .object-item {
+    padding: 8px 16px;
+    
+    &:hover {
+      background: lighten($primary-color, 10%);
+    }
+  }
+}
+
+// Custom utilities (Tailwind + SCSS)
+.custom-button {
+  @apply bg-blue-500 text-white px-4 py-2 rounded;
+  
+  &:hover {
+    @apply bg-blue-600;
+  }
+}
+
+// 여기에 모든 추가 스타일을 작성하세요
