@@ -19,7 +19,7 @@ const rightSideBar = {
         'DetectedObjects',
         'FireSchedule',
     ],
-    col: [2, 1, 5, 2]  // 20% : 10% : 50% : 20% 비율
+    col: [1, 1, 5, 3]  // 20% : 10% : 50% : 20% 비율
 }
 
 // 전체 레이아웃 비율 설정

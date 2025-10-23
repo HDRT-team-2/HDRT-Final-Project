@@ -8,9 +8,10 @@ defineProps<{
 }>();
 </script>
 <template>
-  <ul>
+  <ul class="space-y-1">
     <ObjectItem
       v-for="item in itemList"
+      :key="item.id"
       :id="item.id"
       :name="item.name"
       :type="item.type"
