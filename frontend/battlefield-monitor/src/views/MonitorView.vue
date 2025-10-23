@@ -7,7 +7,7 @@ import CommandPanel from '@/layouts/CommandPanel.vue';
 <template>
     <div class="h-screen flex flex-col">
         <!-- 헤더: 고정 높이 -->
-        <AppHeader class="h-20 flex-shrink-0" />
+        <AppHeader class="h-10 flex-shrink-0" />
         
         <!-- 메인 레이아웃: 나머지 모든 공간 차지 -->
         <MainLayout class="flex-1 min-h-0" />
