@@ -3,8 +3,16 @@ import AppHeader from '@/layouts/AppHeader.vue';
 import MainLayout from '@/layouts/MainLayout.vue';
 import CommandPanel from '@/layouts/CommandPanel.vue';
 </script>
+
 <template>
-    <AppHeader />
-    <MainLayout />
-    <CommandPanel />
+    <div class="h-screen flex flex-col">
+        <!-- 헤더: 고정 높이 -->
+        <AppHeader class="h-20 flex-shrink-0" />
+        
+        <!-- 메인 레이아웃: 나머지 모든 공간 차지 -->
+        <MainLayout class="flex-1 min-h-0" />
+        
+        <!-- 명령 패널: 고정 높이 -->
+        <CommandPanel class="h-40 flex-shrink-0" />
+    </div>
 </template>

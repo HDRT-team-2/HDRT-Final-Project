@@ -43,12 +43,21 @@ const getFlexStyle = (ratio: number) => {
 </script>
 
 <template>
-    <div class="sidebar flex flex-col h-full">
-        <component
+    <div class="flex flex-col h-full gap-2 p-2">
+        <div
             v-for="(componentName, index) in contents"
-            :is="getComponent(componentName)"
             :key="componentName"
             :style="getFlexStyle(col[index])"
-        />
+            class="flex-item"
+        >
+            <component
+                :is="getComponent(componentName)"
+                v-if="getComponent(componentName)"
+                class="h-full"
+            />
+            <div v-else class="h-full flex items-center justify-center text-gray-500">
+                {{ componentName }} (컴포넌트를 찾을 수 없음)
+            </div>
+        </div>
     </div>
 </template>

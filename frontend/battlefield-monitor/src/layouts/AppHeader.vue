@@ -1,7 +1,7 @@
 <script setup lang="ts">
 </script>
 <template>
-  <header>
-    <h1 class="bg-sky-800">Battlefield Monitor Header</h1>
+  <header class="bg-military-800 h-full flex items-center justify-center">
+    <h1 class="text-white text-4xl">Battlefield Monitor</h1>
   </header>
 </template>
