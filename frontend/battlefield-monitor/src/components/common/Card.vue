@@ -10,7 +10,7 @@ defineProps<{ title: string }>()
     </div>
     
     <!-- Body -->
-    <div class="p-4 overflow-y-auto">
+    <div class="p-2 overflow-y-auto">
       <slot />
     </div>
   </div>
