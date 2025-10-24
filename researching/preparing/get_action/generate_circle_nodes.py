@@ -88,7 +88,6 @@ def generate_circle_nodes(x, y, z, num_nodes, radius):  #y는 좌표입력 혼�
         nodes.append((px, pz))                  # 생성한 x,z좌표를 리스트에 저장
 
     return nodes
-    
 
 nodes = generate_circle_nodes(100, 10, 200, num_nodes = 8, radius = 10) # x, y, z 좌표, 노드 갯수(짝수로 입력할것!), 반지름 넓이
 #print(nodes)               # generate_circle_nodes로 생성된 노드 전체 출력
