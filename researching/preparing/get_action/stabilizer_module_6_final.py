@@ -1,6 +1,5 @@
 # stabilizer에 터렛 회전 계산과 명령 생성을 통합해 get_action에서 호출만으로 자동회전 명령할 수 있는 코드 
 
-"""
 def stabilizer(ally_x, ally_y, ally_z, enemy_x, enemy_y, enemy_z):
     
     # ally_x, ally_y, ally_z: 아군 전차 좌표
@@ -69,5 +68,3 @@ def get_action():
 
     # JSON 형태로 반환
     return jsonify(action)
-    
-    """
