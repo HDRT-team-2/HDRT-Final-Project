@@ -269,7 +269,7 @@ def init():
         "trackingMode": True,
         "detactMode": False,
         "logMode": True,
-        "enemyTracking": True,
+        "enemyTracking": False,
         "saveSnapshot": False,
         "saveLog": True,
         "saveLidarData": False,
