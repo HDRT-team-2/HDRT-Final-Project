@@ -45,7 +45,7 @@ const handleCommandSubmit = (command: string) => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full min-h-[160px] bg-gray-900 text-white">
+  <div class="flex flex-col min-h-[160px] bg-gray-900 text-white">
     <!-- 헤더 -->
     <CommandHeader title="명령어 콘솔" />
 
