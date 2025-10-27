@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Card from '@/components/common/Card.vue';
 import LabelText from '@/components/common/LabelText.vue';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 // Pinia
 import { storeToRefs } from 'pinia'
@@ -13,6 +13,8 @@ const positionStore = usePositionStore()
 // 반응형으로 current 가져오기
 const { current } = storeToRefs(positionStore)
 
+const displayX = computed(() => current.value.x.toFixed(1))
+const displayY = computed(() => current.value.y.toFixed(1))
 // #TODO
 // NOTE: WebSocket 연결은 composables/useWebSocket.ts에서 처리 예정
 // WebSocket이 메시지를 받으면 자동으로 positionStore.updateCurrentPosition() 호출
@@ -25,13 +27,13 @@ const { current } = storeToRefs(positionStore)
     <div class="flex items-center justify-center gap-4">
       <LabelText 
         label="X"
-        :value="current.x"
+        :value="displayX"
         :maxlength="3"
       />
       
       <LabelText 
         label="Y"
-        :value="current.y"
+        :value="displayY"
         :maxlength="3"
       />
     </div>
