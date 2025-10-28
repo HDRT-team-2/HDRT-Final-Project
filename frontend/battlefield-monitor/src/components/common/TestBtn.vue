@@ -5,21 +5,26 @@ import { usePositionStore } from '@/stores/position'
 import { useMockPositionWebSocket } from '@/composables/usePositionWebSocket'
 import { useMockTargetCommand } from '@/composables/useTargetCommand'
 import { useMockDetectionWebSocket } from '@/composables/useDetectionWebSocket'
+import { useMockFireWebSocket } from '@/composables/useFireWebSocket'
+import { useDetectionStore } from '@/stores/detection'
+import { useFireStore } from '@/stores/fire'
 
 const positionStore = usePositionStore()
 const { hasTarget, target } = storeToRefs(positionStore)
+
+const detectionStore = useDetectionStore()
+const fireStore = useFireStore()
 
 // Mock Position WebSocket
 const mockPositionWs = useMockPositionWebSocket()
 const isMoving = ref(false)
 
-// Mock Detection WebSocket
-const mockDetectionWs = useMockDetectionWebSocket()
-const isDetecting = ref(false)
+// Mock Fire WebSocket
+const mockFireWs = useMockFireWebSocket()
 
-// Detection Store
-import { useDetectionStore } from '@/stores/detection'
-const detectionStore = useDetectionStore()
+// Mock Detection WebSocket (Fire WebSocket 연결)
+const mockDetectionWs = useMockDetectionWebSocket(mockFireWs)
+const isDetecting = ref(false)
 
 // Mock Target Command
 const { isSending, error, sendTarget } = useMockTargetCommand(mockPositionWs)
@@ -27,7 +32,7 @@ const { isSending, error, sendTarget } = useMockTargetCommand(mockPositionWs)
 /**
  * 테스트 실행 버튼
  * 1. Position WebSocket 시작 (전차 이동)
- * 2. Detection WebSocket 시작 (객체 탐지)
+ * 2. Detection WebSocket 시작 (객체 탐지 + 자동 발포)
  * 3. 타겟 전송 (API 호출)
  */
 async function handleTestExecute() {
@@ -41,10 +46,10 @@ async function handleTestExecute() {
     console.error('❌ 실행 실패:', error.value)
   }
   
-  // 2. Detection WebSocket 시작
+  // 2. Detection WebSocket 시작 (적 전차 발견 시 자동 발포)
   mockDetectionWs.start()
   isDetecting.value = true
-  console.log('✅ Detection 테스트 실행')
+  console.log('✅ Detection + Fire 테스트 실행')
 }
 
 /**
@@ -61,6 +66,9 @@ function handleTestStop() {
   
   // 탐지 객체 초기화
   detectionStore.clearObjects()
+  
+  // 발포 기록 초기화
+  fireStore.clearFires()
   
   console.log('🛑 테스트 정지')
 }

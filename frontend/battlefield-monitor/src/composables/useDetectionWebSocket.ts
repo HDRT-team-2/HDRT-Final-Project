@@ -99,11 +99,12 @@ export function useDetectionWebSocket() {
  * 테스트용: Mock Detection WebSocket
  * 랜덤 탐지 객체 생성
  */
-export function useMockDetectionWebSocket() {
+export function useMockDetectionWebSocket(fireWebSocket?: { fireAtTank: (id: number) => void }) {
   const detectionStore = useDetectionStore()
   
   let intervalId: number | null = null
   let trackingIdCounter = 1
+  let fireEnabled = true // 발포 활성화 여부
   
   /**
    * 랜덤 탐지 데이터 생성
@@ -120,13 +121,20 @@ export function useMockDetectionWebSocket() {
       const randomIndex = Math.floor(Math.random() * classIds.length)
       const randomClassId = classIds[randomIndex] as number
       
+      const tracking_id = trackingIdCounter++
+      
       mockData.push({
-        tracking_id: trackingIdCounter++,
+        tracking_id,
         class_id: randomClassId,
         x: Math.random() * 300,
         y: Math.random() * 300,
         timestamp: new Date().toISOString()
       })
+      
+      // 적 전차 발견 시 자동 발포 (활성화 상태일 때만)
+      if (randomClassId === 1 && fireWebSocket && fireEnabled) {
+        fireWebSocket.fireAtTank(tracking_id)
+      }
     }
     
     return mockData
@@ -137,6 +145,7 @@ export function useMockDetectionWebSocket() {
    */
   function start() {
     console.log('🎮 Mock Detection WebSocket 시작')
+    fireEnabled = true
     
     // 2초마다 랜덤 탐지 데이터 생성
     intervalId = window.setInterval(() => {
@@ -151,6 +160,8 @@ export function useMockDetectionWebSocket() {
    * Mock WebSocket 중지
    */
   function stop() {
+    fireEnabled = false // 발포 비활성화
+    
     if (intervalId !== null) {
       clearInterval(intervalId)
       intervalId = null
