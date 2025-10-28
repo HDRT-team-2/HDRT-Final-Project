@@ -1,9 +1,7 @@
 import { ref } from 'vue'
 import { usePositionStore } from '@/stores/position'
 
-/**
- * 목표 위치를 백엔드로 전송하고 이동 시작
- */
+// 목표 위치를 백엔드로 전송하고 이동 시작
 export function useTargetCommand() {
   const positionStore = usePositionStore()
   
@@ -26,7 +24,7 @@ export function useTargetCommand() {
     error.value = null
     
     try {
-      // TODO: 실제 백엔드 URL
+      // #TODO: 실제 백엔드 URL
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
       
       const response = await fetch(`${API_URL}/api/target`, {

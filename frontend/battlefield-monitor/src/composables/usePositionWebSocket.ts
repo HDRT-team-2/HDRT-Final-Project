@@ -13,9 +13,7 @@ export function usePositionWebSocket() {
   const isConnected = ref(false)
   const ws = ref<WebSocket | null>(null)
   
-  /**
-   * WebSocket 연결
-   */
+  // WebSocket 연결
   function connect() {
     // #TODO: 백엔드 URL 설정
     const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws/position'
@@ -70,10 +68,8 @@ export function usePositionWebSocket() {
       isConnected.value = false
     }
   }
-  
-  /**
-   * WebSocket 연결 해제
-   */
+
+  // WebSocket 연결 해제
   function disconnect() {
     if (ws.value) {
       ws.value.close()

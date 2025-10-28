@@ -13,9 +13,7 @@ export function useDetectionWebSocket() {
   const isConnected = ref(false)
   const ws = ref<WebSocket | null>(null)
   
-  /**
-   * WebSocket 연결
-   */
+  // WebSocket 연결
   function connect() {
     // #TODO: 백엔드 URL 설정
     const WS_URL = import.meta.env.VITE_DETECTION_WS_URL || 'ws://localhost:8000/ws/detection'
@@ -64,10 +62,8 @@ export function useDetectionWebSocket() {
       isConnected.value = false
     }
   }
-  
-  /**
-   * WebSocket 연결 해제
-   */
+
+  // WebSocket 연결 해제
   function disconnect() {
     if (ws.value) {
       ws.value.close()
@@ -105,10 +101,8 @@ export function useMockDetectionWebSocket(fireWebSocket?: { fireAtTank: (id: num
   let intervalId: number | null = null
   let trackingIdCounter = 1
   let fireEnabled = true // 발포 활성화 여부
-  
-  /**
-   * 랜덤 탐지 데이터 생성
-   */
+
+  // 랜덤 탐지 데이터 생성
   function generateMockDetections(): DetectionResponse[] {
     const mockData: DetectionResponse[] = []
     
@@ -139,10 +133,8 @@ export function useMockDetectionWebSocket(fireWebSocket?: { fireAtTank: (id: num
     
     return mockData
   }
-  
-  /**
-   * Mock WebSocket 시작
-   */
+
+  // Mock WebSocket 시작
   function start() {
     console.log('🎮 Mock Detection WebSocket 시작')
     fireEnabled = true
@@ -152,20 +144,18 @@ export function useMockDetectionWebSocket(fireWebSocket?: { fireAtTank: (id: num
       const mockDetections = generateMockDetections()
       detectionStore.updateObjects(mockDetections)
       
-      console.log(`🔍 Mock 탐지: ${mockDetections.length}개 객체 생성`)
+      console.log(` Mock 탐지: ${mockDetections.length}개 객체 생성`)
     }, 2000)
   }
-  
-  /**
-   * Mock WebSocket 중지
-   */
+
+  // Mock WebSocket 중지
   function stop() {
     fireEnabled = false // 발포 비활성화
     
     if (intervalId !== null) {
       clearInterval(intervalId)
       intervalId = null
-      console.log('🛑 Mock Detection WebSocket 중지')
+      console.log(' Mock Detection WebSocket 중지')
     }
   }
   

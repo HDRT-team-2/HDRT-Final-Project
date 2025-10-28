@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import type { TankPosition, TargetPosition, TankStatus } from '@/types/position'
 
 export const usePositionStore = defineStore('position', () => {
-  // State (ref로 선언)
+  // State---------------------------------------
   
   // 현재 위치 (WebSocket으로 업데이트예정)
   const current = ref<TankPosition>({
@@ -16,12 +16,12 @@ export const usePositionStore = defineStore('position', () => {
   const target = ref<TargetPosition | null>(null)
 
 
-  // Computed (계산된 값)
+  // Computed-----------------------------------
   
   // 목표가 설정되어 있는지 확인
   const hasTarget = computed(() => target.value !== null)
 
-  // Actions (함수)
+  // Actions-------------------------------------
   
   // 현재 위치 업데이트 (WebSocket에서 호출 예정)
   function updateCurrentPosition(position: TankPosition) {
@@ -48,13 +48,6 @@ export const usePositionStore = defineStore('position', () => {
 
   // 목표 위치 초기화
   function clearTarget() {
-    target.value = null
-  }
-
-  /**
-   * Store 초기화 (테스트용)
-   */
-  function reset() {
     current.value = { x: 150, y: 150, angle: 0 }
     target.value = null
   }
@@ -73,6 +66,5 @@ export const usePositionStore = defineStore('position', () => {
     setCurrentPosition,
     setTarget,
     clearTarget,
-    reset
   }
 })

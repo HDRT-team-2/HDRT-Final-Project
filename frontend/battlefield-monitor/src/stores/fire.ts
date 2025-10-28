@@ -3,20 +3,14 @@ import { defineStore } from 'pinia'
 import type { FireEvent, FireResponse, HitResultResponse, HitResult } from '@/types/fire'
 
 export const useFireStore = defineStore('fire', () => {
-  // ==========================================
-  // State
-  // ==========================================
+  // State-----------------------------------------
   
   // 모든 발포 이벤트
   const fires = ref<FireEvent[]>([])
 
-  // ==========================================
-  // Actions
-  // ==========================================
+  // Actions---------------------------------------
   
-  /**
-   * 발포 이벤트 추가
-   */
+  // 발포 이벤트 추가
   function addFire(data: FireResponse) {
     const newFire: FireEvent = {
       id: `fire-${data.target_tracking_id}-${Date.now()}`,
@@ -26,13 +20,10 @@ export const useFireStore = defineStore('fire', () => {
     }
     
     fires.value.push(newFire)
-    console.log(`🔫 발포: 대상 [${data.target_tracking_id}]`)
+    console.log(`발포: 대상 [${data.target_tracking_id}]`)
   }
-  
-  /**
-   * 명중 결과 업데이트
-   * - target_tracking_id로 발포 이벤트를 찾아서 결과 업데이트
-   */
+
+  // 명중 결과 업데이트 - target_tracking_id로 발포 이벤트를 찾아서 결과 업데이트
   function updateHitResult(data: HitResultResponse) {
     // 가장 최근 발포 이벤트 중에서 결과가 없는 것 찾기
     const fire = fires.value
@@ -45,32 +36,21 @@ export const useFireStore = defineStore('fire', () => {
         hit: data.hit,
         hitAt: data.timestamp ? new Date(data.timestamp) : new Date()
       }
-      
-      const result = data.hit ? '🎯 명중!' : '❌ 미명중'
+
+      const result = data.hit ? 'shot' : 'miss'
       console.log(`${result} 대상 [${data.target_tracking_id}]`)
     } else {
-      console.warn(`⚠️ 발포 이벤트를 찾을 수 없음: tracking_id ${data.target_tracking_id}`)
+      console.warn(`발포 이벤트를 찾을 수 없음: tracking_id ${data.target_tracking_id}`)
     }
   }
   
-  /**
-   * 전체 초기화
-   */
+  // 전체 초기화
   function clearFires() {
     fires.value = []
-    console.log('🗑️ 모든 발포 기록 삭제')
-  }
-  
-  /**
-   * Store 초기화 (테스트용)
-   */
-  function reset() {
-    fires.value = []
+    console.log(' 모든 발포 기록 삭제')
   }
 
-  // ==========================================
-  // Return
-  // ==========================================
+  // Return---------------------------------------
   return {
     // State
     fires,
@@ -79,6 +59,5 @@ export const useFireStore = defineStore('fire', () => {
     addFire,
     updateHitResult,
     clearFires,
-    reset
   }
 })
