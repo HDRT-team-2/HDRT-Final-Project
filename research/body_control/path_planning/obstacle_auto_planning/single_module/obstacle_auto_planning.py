@@ -1,117 +1,57 @@
-# --- 연결 리스트 형태의 웨이포인트(목표) 관리 ---
-class WaypointNode:
-    def __init__(self, x, z, arrived=False):
-        self.x = float(x)
-        self.z = float(z)
-        self.arrived = bool(arrived)
-        self.next = None
-
-class WaypointList:
-    def __init__(self):
-        self.head = None
-        self.tail = None
-        self._len = 0
-
-    def append(self, x, z, arrived=False):
-        node = WaypointNode(x, z, arrived)
-        if not self.head:
-            self.head = self.tail = node
-        else:
-            self.tail.next = node
-            self.tail = node
-        self._len += 1
-        return node
-
-    def peek(self):
-        return self.head
-
-    def pop(self):
-        if not self.head:
-            return None
-        node = self.head
-        self.head = node.next
-        if not self.head:
-            self.tail = None
-        node.next = None
-        self._len -= 1
-        return node
-
-    def mark_head_arrived(self):
-        if self.head:
-            self.head.arrived = True
-            return True
-        return False
-
-    def is_empty(self):
-        return self.head is None
-
-    def to_list(self):
-        out = []
-        cur = self.head
-        while cur:
-            out.append({'x': cur.x, 'z': cur.z, 'arrived': cur.arrived})
-            cur = cur.next
-        return out
-
-# 전역 웨이포인트 리스트 인스턴스 (기본값: 빈 리스트)
-waypoints = WaypointList()
-
 def auto_locate(obstacles):
-    """
-    장애물 9개를 그룹 분류/정렬 후, 각 장애물의 중심좌표(x, z)를 group3에 저장하고,
-    순서대로 waypoints(연결 리스트)에 추가한다.
-    Args:
-        obstacles: 장애물 리스트 [{'x_min': ..., 'x_max': ..., 'z_min': ..., 'z_max': ...}, ...]
-    Returns:
-        group3: [(x, z), ...] 형태의 리스트
-    """
-    if len(obstacles) != 9:
-        print(f"⚠️ 장애물 개수가 9개가 아닙니다. 현재: {len(obstacles)}개")
-        return []
+    # ...existing code...
+    obstacles = data.get('obstacles', [])
+    if len(obstacles) == 4:
+        print("\n🔄 4개 점 입력! 조건에 따라 순서 지정...")
+        group1 = obstacles.copy()  # 4개 점의 dict 저장
 
-    # 1. group1에 9개 장애물 저장 (원본 순서)
-    group1 = obstacles.copy()
+        # group2: 각 점의 중심좌표 (center_x, center_z) 튜플 저장
+        group2 = []
+        for obstacle in group1:
+            center_x = (obstacle['x_min'] + obstacle['x_max']) / 2
+            center_z = (obstacle['z_min'] + obstacle['z_max']) / 2
+            group2.append((center_x, center_z))
 
-    # 2. z_max 기준으로 그룹 분류
-    a_group, b_group, c_group = [], [], []
-    for obstacle in group1:
-        z_max = obstacle['z_max']
-        if z_max <= 100:
-            a_group.append(obstacle)
-        elif z_max <= 200:
-            b_group.append(obstacle)
-        else:
-            c_group.append(obstacle)
+        # group3: 조건에 따라 점을 분류
+        group3 = [None, None, None, None]
+        used = [False, False, False, False]
+        # 1. 첫 번째 점: center_x>55 and center_z>55 and center_x<150 and center_z<150
+        for i, (cx, cz) in enumerate(group2):
+            if cx < 150 and cz < 150 and cx > 55 and cz > 55:
+                group3[0] = (cx, cz)
+                used[i] = True
+                break
+        # 2. 두 번째 점: center_x>55 and center_z>150 and center_z<245
+        for i, (cx, cz) in enumerate(group2):
+            if not used[i] and cx < 150 and cz > 150 and cz < 245 and cx > 55:
+                group3[1] = (cx, cz)
+                used[i] = True
+                break
+        # 3. 세 번째 점: center_x>150 and center_x<245 and center_z>150 and center_z<245
+        for i, (cx, cz) in enumerate(group2):
+            if not used[i] and cx > 150 and cx < 245 and cz > 150 and cz < 245:
+                group3[2] = (cx, cz)
+                used[i] = True
+                break
+        # 4. 네 번째 점: 남은 점 (center_x>150 and center_x<245 and center_z>55 and center_z<150)
+        for i, (cx, cz) in enumerate(group2):
+            if not used[i] and cx > 150 and cx < 245 and cz > 55 and cz < 150:
+                group3[3] = (cx, cz)
+                used[i] = True
+                break
 
-    print(f"📊 그룹 분류 결과: A그룹({len(a_group)}개), B그룹({len(b_group)}개), C그룹({len(c_group)}개)")
+        print("\n📋 group2 중심좌표:")
+        for i, (center_x, center_z) in enumerate(group2, 1):
+            print(f"  {i}번: center_x={center_x:.2f}, center_z={center_z:.2f}")
 
-    # 3. 정렬
-    a_group.sort(key=lambda x: x['x_max'])
-    c_group.sort(key=lambda x: x['x_max'])
-    b_group.sort(key=lambda x: x['x_max'], reverse=True)
+        print("\n✅ group3 조건 분류 결과:")
+        all_valid = True
+        for i, pt in enumerate(group3, 1):
+            if pt:
+                print(f"  {i}번: center_x={pt[0]:.2f}, center_z={pt[1]:.2f}")
+            else:
+                print(f"  {i}번: 조건에 맞는 점 없음!")
+                all_valid = False
 
-    # 4. group2 생성 (정렬된 순서)
-    group2 = a_group + b_group + c_group
-
-    # 5. 좌표 한개씩 출력
-    print("\n📋 최종 정렬된 장애물 좌표:")
-    for i, obstacle in enumerate(group2, 1):
-        print(f"  {i}번: x_min={obstacle['x_min']:.2f}, x_max={obstacle['x_max']:.2f}, "
-              f"z_min={obstacle['z_min']:.2f}, z_max={obstacle['z_max']:.2f}")
-
-    # 6. 각 장애물의 중심좌표 계산하여 group3에 저장
-    group3 = []
-    for obstacle in group2:
-        center_x = (obstacle['x_min'] + obstacle['x_max']) / 2
-        center_z = (obstacle['z_min'] + obstacle['z_max']) / 2
-        group3.append((center_x, center_z))
-
-    # 7. group3을 waypoints 연결리스트에 추가
-    for x, z in group3:
-        waypoints.append(x, z)
-
-    # 8. 저장된 좌표쌍 출력
-    print("\n🟢 Waypoints에 저장된 좌표쌍:")
-    for i, wp in enumerate(waypoints.to_list(), 1):
-        print(f"  {i}번: x={wp['x']:.2f}, z={wp['z']:.2f}, arrived={wp['arrived']}")
-
+        if not all_valid:
+            print("\n❌ 네 개의 점 조건 중 하나라도 불만족! 장애물을 다시 추가하세요.")
