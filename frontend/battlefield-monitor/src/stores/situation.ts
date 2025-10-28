@@ -34,7 +34,7 @@ export const useSituationStore = defineStore('situation', () => {
       events.value = events.value.slice(0, maxEvents.value)
     }
     
-    console.log(`📋 상황 로그: ${event.message}`)
+    console.log(`상황 로그: ${event.message}`)
   }
   
   // 최대 이벤트 개수 설정
