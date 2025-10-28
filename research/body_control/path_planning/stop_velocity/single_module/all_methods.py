@@ -1,3 +1,9 @@
+"""
+전차가 65km/h로 주행하다가, 세 가지 방법으로 제동했을 때의 제동거리와 제동시간에 대해 종합적인 시각화를 하기 위한 코드파일입니다.
+1. S 키다운을 통한 역가속 제동
+2. W 키업을 통한 가속도 제거 제동
+3. STOP 명령어를 사용한 제동
+"""
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -153,5 +159,5 @@ for ax, method in zip(axes, methods):
     process_and_plot(df, method, ax, min_running_time=17.0)
 
 plt.tight_layout()
-# plt.savefig('research/body_control/path_planning/stop_velocity/study/visualization/stop_all_methods.png')
+plt.savefig('source/research/body_control/path_planning/stop_velocity/stop_all_methods.png')
 plt.show()

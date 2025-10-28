@@ -34,5 +34,5 @@ axes[1].grid(True)
 plt.title(f'{v}km/h 주행시의 조향 Profile')
 plt.tight_layout()
 
-# plt.savefig(f'research/body_control/path_planning/tank_turn_d/study/visualization/tank_d_turn_{v}.png')
+plt.savefig(f'source/research/body_control/path_planning/tank_turn_d/tank_d_turn_{v}.png')
 plt.show()
