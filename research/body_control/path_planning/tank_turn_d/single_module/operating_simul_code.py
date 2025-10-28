@@ -1,3 +1,12 @@
+"""
+해당 코드 폴더는 (전차를 tracking mode로 "10초 직진 주행 후 D방향으로 조향" 주행)시키기 위한 코드입니다
+시간에 대한 제어를 위한 코드 변경이 있습니다.
+19~22번 라인,
+159~161번 라인,
+177~184번 라인,
+189~237번 라인에 대해 주 수정 구문이 있습니다.
+"""
+
 from flask import Flask, request, jsonify
 import os
 import torch

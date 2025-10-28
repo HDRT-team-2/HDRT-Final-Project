@@ -4,10 +4,10 @@ import numpy as np
 
 plt.rcParams['font.family'] = 'Malgun Gothic'
 
-v = "65"
+v = "20"
 
 # 데이터 불러오기
-df = pd.read_excel(f"tank_turn_d/tank_turn_d_dataset/tank_d_turn_{v}.xlsx")
+df = pd.read_excel(f"research/body_control/path_planning/tank_turn_d/data/tank_d_turn_{v}.xlsx")
 pos = df[["Time", "Player_Pos_X", "Player_Pos_Y", "Player_Pos_Z"]]
 
 # 서브플롯 생성 (2행 1열)
@@ -33,6 +33,5 @@ axes[1].grid(True)
 
 plt.title(f'{v}km/h 주행시의 조향 Profile')
 plt.tight_layout()
-
-plt.savefig(f'tank_turn_d/tank_turn_d_consequence/tank_d_turn_{v}.png')
+# plt.savefig(f'research/body_control/path_planning/tank_turn_d/study/visualization/tank_d_turn_{v}.png')
 plt.show()

@@ -1,3 +1,9 @@
+"""
+실험을 시작하기 전, 각 실험 데이터를 샘플링하는 코드입니다.
+'범위값을 갖는 input 데이터중(W와 D의 웨이트값 1/65~65/65), 어떤 방식(Latin HyperCube 실험 데이터 추출 방식)으로 데이터를 추출하여, 이 데이터들에 대해 실험해라'
+를 계산해주는 코드입니다.
+이는 surrogate model이 회귀선을 작성할 때 실험데이터를 적절히 산개시켜주고 모델의 신뢰도를 높여줍니다.
+"""
 import numpy as np
 from scipy.stats import qmc
 from fractions import Fraction
@@ -27,7 +33,7 @@ plt.xlabel('w_weight')
 plt.ylabel('d_weight')
 plt.title('2D Projection of OLHS Design')
 plt.grid(True)
-plt.savefig('surrogate_w_d/sampling/sampling_lhs.png')
+# plt.savefig('surrogate_w_d/sampling/sampling_lhs.png')
 plt.show()
 
 # 샘플링 결과 출력 (분수로 보기 좋게)

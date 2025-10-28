@@ -10,7 +10,7 @@ plt.rc("font", family="Malgun Gothic")
 
 # 데이터 로드
 # 파일 경로와 컬럼명 확인: 'w','d','output'
-df = pd.read_excel("surrogate_w_d/experiment_data/experiment_data.xlsx")
+df = pd.read_excel("research/body_control/path_planning/tank_cornering_ssurogate_w_d/data/experiment_data.xlsx")
 
 X = df[['w_weight','d_weight']].values
 y = df['omega'].values
@@ -82,7 +82,7 @@ ax4.set_xlabel('sample index'); ax4.set_ylabel('residual (y - y_pred)')
 ax4.set_title('잔차')
 
 plt.tight_layout()
-plt.savefig('surrogate_w_d/experiment_data/surrogate_model_completed.png')
+# plt.savefig('surrogate_w_d/experiment_data/surrogate_model_completed.png')
 plt.show()
 
 # 모델 저장 / 예측 csv 저장

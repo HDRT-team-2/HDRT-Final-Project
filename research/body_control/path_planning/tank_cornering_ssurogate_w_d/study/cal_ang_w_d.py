@@ -1,4 +1,18 @@
-# yaw_stable_visual.py
+"""
+각 데이터 엑셀 파일들의 
+최대 속도(W웨이트값으로 제어) 주행시
+조향했을 때(D웨이트값으로 제어)
+전차의 각속도를 계산하는 파일입니다.
+
+surrogate model을 만들기 위해, 각 W와 D의 웨이트값(input)에 대한 각속도(output)을 여러번의 실험 데이터로 참고하기 위함입니다.
+surrogate model이란,
+                (linear regression과 동일한 개념과 원리이되, 1차원의 직선 형태의 회귀선이 아닌, 
+                3차원의 곡평면 형태로 입력 데이터에 대한 예측 회귀 방정식 그래프라 이해하시면 됩니다.)
+
+해당 코드파일을 Run하기 위해서는, 
+tank_cornering_surrogate_w_d 폴더 내의 데이터 폴더에서의 엑셀 파일명의 뒤 w와 d에 해당하는 부분만 수치를 바꿔주시면 run 할 수 있습니다.
+해당 W와 D의 실험 웨이트값 폴더 형태는 24 ~ 44번 line을 참고하실 수 있으며, 이 참고값은 주석처리 해놨습니다.
+"""
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,7 +43,7 @@ D_WEIGHT = 42
 # 19: w = 10/65, d = 42/65  완료
 # 20: w = 54/65, d = 21/65  완료
 
-EXCEL_PATH = f"surrogate_w_d/dataset_w_d/w_{W_WEIGHT}_d_{D_WEIGHT}.xlsx"
+EXCEL_PATH = f"research/body_control/path_planning/tank_cornering_ssurogate_w_d/data/w_{W_WEIGHT}_d_{D_WEIGHT}.xlsx"
 
 
 SHEET_NAME = 0
@@ -98,5 +112,5 @@ plt.grid(True)
 plt.legend()
 
 plt.tight_layout()
-plt.savefig(f'surrogate_w_d/consequence_w_d/w_{W_WEIGHT}_d_{D_WEIGHT}_omega_{abs(np.mean(yaw_rate_deg[start_idx:])):.4f}.png')
+# plt.savefig(f'source/research/body_control/tank_cornering_ssurogate_w_d/w_{W_WEIGHT}_d_{D_WEIGHT}_omega_{abs(np.mean(yaw_rate_deg[start_idx:])):.4f}.png')
 plt.show()

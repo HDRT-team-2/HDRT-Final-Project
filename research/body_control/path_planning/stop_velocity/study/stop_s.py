@@ -5,7 +5,7 @@ plt.rcParams['font.family'] = 'Malgun Gothic'
 
 # 데이터 읽기
 stop_method = 's'
-excel_path = f'stop_velocity/stop_dataset/stop_velocity_{stop_method}.xlsx'
+excel_path = f'research/body_control/path_planning/stop_velocity/data/stop_velocity_{stop_method}.xlsx'
 df = pd.read_excel(excel_path)
 
 # 좌표와 시간
@@ -99,5 +99,5 @@ plt.text(0.02, 0.40, textstr, transform=plt.gca().transAxes, fontsize=10,
 
 plt.legend()
 plt.tight_layout()
-plt.savefig(f'stop_velocity/stop_consequence/stop_velocity_{stop_method}.png')
+# plt.savefig('research/body_control/path_planning/stop_velocity/study/visualization/stop_{stop_method}.png')
 plt.show()

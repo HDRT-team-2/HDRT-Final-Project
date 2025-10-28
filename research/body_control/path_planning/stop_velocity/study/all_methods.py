@@ -148,10 +148,10 @@ methods = ['s', 'stop', 'w_keyup']
 fig, axes = plt.subplots(3, 1, figsize=(10, 14))
 
 for ax, method in zip(axes, methods):
-    excel_path = f'stop_velocity/stop_dataset/stop_velocity_{method}.xlsx'
+    excel_path = f'research/body_control/path_planning/stop_velocity/data/stop_velocity_{method}.xlsx'
     df = pd.read_excel(excel_path)
     process_and_plot(df, method, ax, min_running_time=17.0)
 
 plt.tight_layout()
-plt.savefig('stop_velocity/stop_consequence/stop_all_methods.png')
+# plt.savefig('research/body_control/path_planning/stop_velocity/study/visualization/stop_all_methods.png')
 plt.show()
