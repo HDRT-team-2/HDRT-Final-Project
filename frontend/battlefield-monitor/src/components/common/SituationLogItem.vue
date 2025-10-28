@@ -1,39 +1,37 @@
 <script setup lang="ts">
-interface SituationEvent {
-  id: number;
-  type: 'enemy_detected' | 'ally_detected' | 'enemy_attack';
-  time: string;
-  target: string;
-  coordinates?: { x: number; y: number };
-}
+import type { SituationEvent } from '@/types/situation';
+const props = defineProps<{ event: SituationEvent }>();
 
-const props = defineProps<{
-  event: SituationEvent;
-}>();
-
-// 이벤트 타입별 스타일 및 텍스트
-const getEventStyle = (type: string) => {
+// 타입별 스타일 및 라벨
+const getEventStyle = (type: SituationEvent['type']) => {
   switch (type) {
-    case 'enemy_detected':
-      return {
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200',
-        textColor: 'text-red-700',
-        label: '적 탐지'
-      };
-    case 'ally_detected':
+    case 'detection':
       return {
         bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-200', 
+        borderColor: 'border-blue-200',
         textColor: 'text-blue-700',
-        label: '아군 탐지'
+        label: '탐지'
       };
-    case 'enemy_attack':
+    case 'fire':
       return {
         bgColor: 'bg-orange-50',
         borderColor: 'border-orange-200',
         textColor: 'text-orange-700',
-        label: '적 공격'
+        label: '발포'
+      };
+    case 'hit':
+      return {
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200',
+        textColor: 'text-green-700',
+        label: '명중'
+      };
+    case 'miss':
+      return {
+        bgColor: 'bg-gray-100',
+        borderColor: 'border-gray-300',
+        textColor: 'text-gray-500',
+        label: '미명중'
       };
     default:
       return {
@@ -54,7 +52,7 @@ const getEventStyle = (type: string) => {
       getEventStyle(event.type).borderColor
     ]"
   >
-    <!-- 왼쪽: 타입, 대상 -->
+    <!-- 왼쪽: 타입/메시지 -->
     <div class="flex flex-col">
       <span 
         class="text-xs font-semibold"
@@ -62,20 +60,16 @@ const getEventStyle = (type: string) => {
       >
         {{ getEventStyle(event.type).label }}
       </span>
-      <span class="text-xs text-gray-600">
-        {{ event.target }}
-        <span v-if="event.coordinates" class="font-mono">
-          [{{ String(event.coordinates.x).padStart(3, '0') }}, {{ String(event.coordinates.y).padStart(3, '0') }}]
-        </span>
+      <span class="text-xs text-gray-700">
+        {{ event.message }}
       </span>
     </div>
-    
     <!-- 오른쪽: 시간 -->
     <span 
       class="text-xs font-mono font-semibold"
       :class="getEventStyle(event.type).textColor"
     >
-      {{ event.time }}
+      {{ typeof event.time === 'string' ? event.time : event.time.toLocaleTimeString('ko-KR', { hour12: false }) }}
     </span>
   </div>
 </template>
