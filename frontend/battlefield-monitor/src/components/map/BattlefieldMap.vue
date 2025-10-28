@@ -4,9 +4,12 @@ import { watch } from 'vue';
 // Pinia
 import { storeToRefs } from 'pinia'
 import { usePositionStore } from '@/stores/position'
+import { useDetectionStore } from '@/stores/detection';
+import MapCanvas from './MapCanvas.vue';
 
 // Store 연결
 const positionStore = usePositionStore()
+const detectionStore = useDetectionStore()
 
 // 반응형으로 current 가져오기
 const { current } = storeToRefs(positionStore)
@@ -20,12 +23,21 @@ watch(target, (newTarget) => {
   } else {
     console.log('목표 위치가 제거됨');
   }
+}, { immediate: true, deep: true });
+
+// 반응형으로 objects 가져오기
+const { objects } = storeToRefs(detectionStore)
+watch(objects, (newObjects) => {
+  console.log('탐지된 객체들 변경됨:', newObjects);
 }, { immediate: true });
 
 </script>
 <template>
   <div class="battlefield-map">
-    <h2>Battlefield Map</h2>
-    <!-- Map rendering logic goes here -->
+    <MapCanvas
+      :current="current"
+      :target="target"
+      :objects="objects"
+    />
   </div>
 </template>
