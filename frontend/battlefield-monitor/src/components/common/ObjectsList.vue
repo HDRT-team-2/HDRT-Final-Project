@@ -1,22 +1,34 @@
 <script setup lang="ts">
-import ObjectItem from '@/components/common/ObjectItem.vue';
-import { ref } from 'vue';
+import ObjectListItem from '@/components/common/ObjectListItem.vue'
 
-defineProps<{
-    // { id: 1, name: '적군 3', type: '보병', x: 320, y: 240 },
-  itemList: { id: number; name: string; type: string; x: number; y: number }[];
-}>();
+interface Props {
+  title: string
+  count: number
+  bgColor: string
+  borderColor: string
+  textColor: string
+  countColor: string
+  items?: { label: string; count: number }[] // 하위 항목 (옵션)
+}
+
+defineProps<Props>()
 </script>
+
 <template>
-  <ul class="space-y-1">
-    <ObjectItem
-      v-for="item in itemList"
-      :key="item.id"
-      :id="item.id"
-      :name="item.name"
-      :type="item.type"
-      :x="item.x"
-      :y="item.y"
-    />
-  </ul>
+  <div :class="['p-2 border rounded', bgColor, borderColor]">
+    <div class="flex items-center justify-between" :class="{ 'mb-2': items }">
+      <span :class="['font-medium', textColor]">{{ title }}</span>
+      <span :class="['text-lg font-bold', countColor]">{{ count }}</span>
+    </div>
+    
+    <!-- 하위 항목 -->
+    <div v-if="items" class="pl-4 space-y-1">
+      <ObjectListItem 
+        v-for="(item, index) in items" 
+        :key="index"
+        :label="item.label"
+        :count="item.count"
+      />
+    </div>
+  </div>
 </template>

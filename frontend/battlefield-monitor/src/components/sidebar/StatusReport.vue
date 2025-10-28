@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Card from '@/components/common/Card.vue';
-import LabelText from '@/components/common/LabelText.vue';
 import { ref } from 'vue';
 
 // 작전 정보
