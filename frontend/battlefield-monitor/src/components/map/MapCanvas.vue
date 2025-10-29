@@ -32,27 +32,6 @@ function coordToSvg(x: number, y: number) {
   }
 }
 
-// 클래스별 색상
-function getObjectColor(className: string) {
-  switch (className) {
-    case 'tank': return '#dc2626'    // 빨강 (적 전차)
-    case 'person': return '#3b82f6'  // 파랑 (민간인)
-    case 'car': return '#3b82f6'     // 파랑 (민간 차량)
-    case 'truck': return '#3b82f6'   // 파랑 (민간 트럭)
-    default: return '#6b7280'        // 회색
-  }
-}
-
-// 클래스별 아이콘 (간단한 도형)
-function getObjectShape(className: string) {
-  switch (className) {
-    case 'tank': return 'rect'       // 사각형
-    case 'person': return 'circle'   // 원
-    case 'car': return 'rect'        // 사각형
-    case 'truck': return 'rect'      // 사각형
-    default: return 'circle'
-  }
-}
 </script>
 
 <template>
