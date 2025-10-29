@@ -10,17 +10,17 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // 사람 모양 비율
-const headRadius = size * 0.3
-const bodyHeight = size * 0.8
-const bodyWidth = size * 0.4
+const headRadius = props.size * 0.3
+const bodyHeight = props.size * 0.8
+const bodyWidth = props.size * 0.4
 </script>
 
 <template>
   <g>
     <!-- 머리 -->
     <circle 
-      :cx="x"
-      :cy="y - size * 0.4"
+      :cx="props.x"
+      :cy="props.y - props.size * 0.4"
       :r="headRadius"
       fill="#22c55e"
       stroke="#fff"
@@ -28,8 +28,8 @@ const bodyWidth = size * 0.4
     />
     <!-- 몸통 -->
     <rect
-      :x="x - bodyWidth / 2"
-      :y="y - size * 0.1"
+      :x="props.x - bodyWidth / 2"
+      :y="props.y - props.size * 0.1"
       :width="bodyWidth"
       :height="bodyHeight"
       fill="#22c55e"
@@ -37,5 +37,14 @@ const bodyWidth = size * 0.4
       stroke-width="1"
       rx="2"
     />
+    <!-- <text
+      :x="props.x + props.size * 0.6"
+      :y="props.y + bodyHeight / 2"
+      font-size="10"
+      fill="#22c55e"
+      font-weight="bold"
+    >
+      민간인
+    </text> -->
   </g>
 </template>

@@ -10,18 +10,18 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // 차 모양 비율
-const carWidth = size * 1.4
-const carHeight = size * 0.8
-const roofWidth = size * 0.8
-const roofHeight = size * 0.5
+const carWidth = props.size * 1.4
+const carHeight = props.size * 0.8
+const roofWidth = props.size * 0.8
+const roofHeight = props.size * 0.5
 </script>
 
 <template>
   <g>
     <!-- 차체 (하단) -->
     <rect
-      :x="x - carWidth / 2"
-      :y="y - carHeight / 2"
+      :x="props.x - carWidth / 2"
+      :y="props.y - carHeight / 2"
       :width="carWidth"
       :height="carHeight"
       fill="#22c55e"
@@ -31,8 +31,8 @@ const roofHeight = size * 0.5
     />
     <!-- 지붕 (상단) -->
     <rect
-      :x="x - roofWidth / 2"
-      :y="y - carHeight / 2 - roofHeight"
+      :x="props.x - roofWidth / 2"
+      :y="props.y - carHeight / 2 - roofHeight"
       :width="roofWidth"
       :height="roofHeight"
       fill="#16a34a"
@@ -42,16 +42,16 @@ const roofHeight = size * 0.5
     />
     <!-- 바퀴 (왼쪽) -->
     <circle
-      :cx="x - carWidth * 0.3"
-      :cy="y + carHeight / 2"
-      :r="size * 0.15"
+      :cx="props.x - carWidth * 0.3"
+      :cy="props.y + carHeight / 2"
+      :r="props.size * 0.15"
       fill="#374151"
     />
     <!-- 바퀴 (오른쪽) -->
     <circle
-      :cx="x + carWidth * 0.3"
-      :cy="y + carHeight / 2"
-      :r="size * 0.15"
+      :cx="props.x + carWidth * 0.3"
+      :cy="props.y + carHeight / 2"
+      :r="props.size * 0.15"
       fill="#374151"
     />
   </g>

@@ -1,6 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { TankPosition, TargetPosition } from '@/types/position'
 import type { DetectedObject } from '@/types/detection'
+
+import MyTankIcon from '@/components/icons/MyTankIcon.vue'
+import EnemyIcon from '@/components/icons/EnemyIcon.vue'
+import CarIcon from '@/components/icons/CarIcon.vue'
+import PersonIcon from '@/components/icons/PersonIcon.vue'
 
 interface Props {
   current: TankPosition    // 내 위치
@@ -18,11 +24,11 @@ const canvasHeight = 740 // px
 const coordWidth = 300   // 0~300
 const coordHeight = 300  // 0~300
 
-// 좌표 → SVG 변환
+// 좌표 → SVG 변환 (Y축 반전)
 function coordToSvg(x: number, y: number) {
   return {
     x: (x / coordWidth) * canvasWidth,
-    y: ((coordHeight - y) / coordHeight) * canvasHeight
+    y: ((coordHeight - y) / coordHeight) * canvasHeight  // Y축 반전
   }
 }
 
@@ -60,7 +66,7 @@ function getObjectShape(className: string) {
     <defs>
       <pattern id="grid" width="74" height="74" patternUnits="userSpaceOnUse">
         <path 
-          d="M 60 0 L 0 0 0 60" 
+          d="M 74 0 L 0 0 0 74" 
           fill="none" 
           stroke="gray" 
           stroke-width="0.5"
@@ -72,10 +78,10 @@ function getObjectShape(className: string) {
     
     <!-- 좌표 텍스트 (모서리) -->
     <text x="5" y="15" font-size="12" fill="gray">(0,300)</text>
-    <text :x="canvasWidth - 55" y="15" font-size="12" fill="gray">(300,300)</text>
+    <text :x="canvasWidth - 75" y="15" font-size="12" fill="gray">(300,300)</text>
     <text x="5" :y="canvasHeight - 5" font-size="12" fill="gray">(0,0)</text>
-    <text :x="canvasWidth - 55" :y="canvasHeight - 5" font-size="12" fill="gray">(300,0)</text>
-
+    <text :x="canvasWidth - 75" :y="canvasHeight - 5" font-size="12" fill="gray">(300,0)</text>
+    
     <!-- 목표 위치 (있으면) -->
     <g v-if="target">
       <circle 
@@ -107,65 +113,34 @@ function getObjectShape(className: string) {
     <!-- 탐지된 객체들 -->
     <g v-for="obj in objects" :key="obj.tracking_id">
       <!-- 적 전차 (사각형) -->
-      <g v-if="obj.class_name === 'tank'">
-        <rect
-          :x="coordToSvg(obj.position.x, obj.position.y).x - 6"
-          :y="coordToSvg(obj.position.x, obj.position.y).y - 6"
-          width="12"
-          height="12"
-          :fill="getObjectColor(obj.class_name)"
-        />
-        <text 
-          :x="coordToSvg(obj.position.x, obj.position.y).x + 10"
-          :y="coordToSvg(obj.position.x, obj.position.y).y + 4"
-          font-size="10"
-          fill="#dc2626"
-          font-weight="bold"
-        >
-          {{ obj.tracking_id }}
-        </text>
-      </g>
-      
+       <EnemyIcon 
+        v-if="obj.class_name === 'tank'"
+        :x="coordToSvg(obj.position.x, obj.position.y).x"
+        :y="coordToSvg(obj.position.x, obj.position.y).y"
+        :size="12"
+      />
+
       <!-- 민간인/차량 (원) -->
-      <g v-else>
-        <circle
-          :cx="coordToSvg(obj.position.x, obj.position.y).x"
-          :cy="coordToSvg(obj.position.x, obj.position.y).y"
-          r="5"
-          :fill="getObjectColor(obj.class_name)"
-          opacity="0.7"
-        />
-        <text 
-          :x="coordToSvg(obj.position.x, obj.position.y).x + 8"
-          :y="coordToSvg(obj.position.x, obj.position.y).y + 4"
-          font-size="9"
-          fill="#3b82f6"
-        >
-          {{ obj.tracking_id }}
-        </text>
-      </g>
+       <PersonIcon 
+        v-else-if="obj.class_name === 'person'"
+        :x="coordToSvg(obj.position.x, obj.position.y).x"
+        :y="coordToSvg(obj.position.x, obj.position.y).y"
+        :size="8"
+      />
+      <CarIcon 
+        v-else-if="obj.class_name === 'car' || obj.class_name === 'truck'"
+        :x="coordToSvg(obj.position.x, obj.position.y).x"
+        :y="coordToSvg(obj.position.x, obj.position.y).y"
+        :size="10"
+      />
     </g>
     
     <!-- 내 전차 위치 (마지막에 그려서 맨 위에 표시) -->
-    <g>
-      <circle 
-        :cx="coordToSvg(current.x, current.y).x"
-        :cy="coordToSvg(current.x, current.y).y"
-        r="10"
-        fill="#22c55e"
-        stroke="#fff"
-        stroke-width="2"
-      />
-      <text 
-        :x="coordToSvg(current.x, current.y).x + 15"
-        :y="coordToSvg(current.x, current.y).y + 5"
-        font-size="12"
-        fill="#22c55e"
-        font-weight="bold"
-      >
-        아군
-      </text>
-    </g>
+     <MyTankIcon
+      :x="coordToSvg(current.x, current.y).x"
+      :y="coordToSvg(current.x, current.y).y"
+      :size="14"
+    />
   </svg>
 </template>
 
