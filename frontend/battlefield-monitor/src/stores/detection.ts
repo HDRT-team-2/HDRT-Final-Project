@@ -85,13 +85,13 @@ export const useDetectionStore = defineStore('detection', () => {
       existing.position.y = data.y
       existing.lastUpdated = new Date()
       
-      console.log(`🔄 객체 업데이트 [${data.tracking_id}]:`, existing.class_name, existing.position)
+      console.log(`객체 업데이트 [${data.tracking_id}]:`, existing.class_name, existing.position)
     } else {
       // 새 객체 추가
       const newObj = parseDetectionResponse(data)
       objects.value.push(newObj)
       
-      console.log(`🆕 새 객체 발견 [${data.tracking_id}]:`, newObj.class_name, newObj.position)
+      console.log(`새 객체 발견 [${data.tracking_id}]:`, newObj.class_name, newObj.position)
     }
   }
   
