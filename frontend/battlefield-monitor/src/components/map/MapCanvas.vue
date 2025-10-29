@@ -4,6 +4,7 @@ import type { TankPosition, TargetPosition } from '@/types/position'
 import type { DetectedObject } from '@/types/detection'
 
 import MyTankIcon from '@/components/icons/MyTankIcon.vue'
+import GoalIcon from '@/components/icons/GoalIcon.vue'
 import EnemyIcon from '@/components/icons/EnemyIcon.vue'
 import CarIcon from '@/components/icons/CarIcon.vue'
 import PersonIcon from '@/components/icons/PersonIcon.vue'
@@ -62,32 +63,12 @@ function coordToSvg(x: number, y: number) {
     <text :x="canvasWidth - 75" :y="canvasHeight - 5" font-size="12" fill="gray">(300,0)</text>
     
     <!-- 목표 위치 (있으면) -->
-    <g v-if="target">
-      <circle 
-        :cx="coordToSvg(target.x, target.y).x"
-        :cy="coordToSvg(target.x, target.y).y"
-        r="8"
-        fill="none"
-        stroke="#10b981"
-        stroke-width="3"
-        opacity="0.8"
-      />
-      <circle 
-        :cx="coordToSvg(target.x, target.y).x"
-        :cy="coordToSvg(target.x, target.y).y"
-        r="3"
-        fill="#10b981"
-      />
-      <text 
-        :x="coordToSvg(target.x, target.y).x + 12"
-        :y="coordToSvg(target.x, target.y).y + 5"
-        font-size="11"
-        fill="#10b981"
-        font-weight="bold"
-      >
-        목표
-      </text>
-    </g>
+     <GoalIcon
+      v-if="target"
+      :x="coordToSvg(target.x, target.y).x"
+      :y="coordToSvg(target.x, target.y).y"
+      :size="8"
+    />
     
     <!-- 탐지된 객체들 -->
     <g v-for="obj in objects" :key="obj.tracking_id">
