@@ -112,5 +112,5 @@ plt.grid(True)
 plt.legend()
 
 plt.tight_layout()
-# plt.savefig(f'source/research/body_control/tank_cornering_ssurogate_w_d/w_{W_WEIGHT}_d_{D_WEIGHT}_omega_{abs(np.mean(yaw_rate_deg[start_idx:])):.4f}.png')
+plt.savefig(f'source/research/body_control/path_planning/tank_cornering_surrogate_w_d/w_{W_WEIGHT}_d_{D_WEIGHT}_omega_{abs(np.mean(yaw_rate_deg[start_idx:])):.4f}.png')
 plt.show()

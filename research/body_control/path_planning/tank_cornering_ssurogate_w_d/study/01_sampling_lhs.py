@@ -33,7 +33,7 @@ plt.xlabel('w_weight')
 plt.ylabel('d_weight')
 plt.title('2D Projection of OLHS Design')
 plt.grid(True)
-# plt.savefig('surrogate_w_d/sampling/sampling_lhs.png')
+plt.savefig('source/research/body_control/path_planning/tank_cornering_surrogate_w_d/sampling_lhs.png')
 plt.show()
 
 # 샘플링 결과 출력 (분수로 보기 좋게)

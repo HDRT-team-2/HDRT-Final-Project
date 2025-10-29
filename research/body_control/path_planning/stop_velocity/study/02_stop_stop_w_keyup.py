@@ -99,5 +99,5 @@ plt.text(0.02, 0.40, textstr, transform=plt.gca().transAxes, fontsize=10,
 
 plt.legend()
 plt.tight_layout()
-# plt.savefig('research/body_control/path_planning/stop_velocity/study/visualization/stop_{stop_method}.png')
+plt.savefig(f'source/research/body_control/path_planning/stop_velocity/stop_{stop_method}.png')
 plt.show()

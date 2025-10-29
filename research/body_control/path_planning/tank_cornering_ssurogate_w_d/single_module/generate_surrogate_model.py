@@ -1,4 +1,14 @@
-# 파일명 예: rsm_from_experiment.py
+"""
+최적설계 과정을 시행해봤습니다.
+1. 샘플링 기법 선택 - DOE(Design Of Experiment)
+- sampling_lhs 파일입니다. LHS(Latin HyperCube) method
+2. 샘플링된 샘플들을 활용한 실험 
+- cal_ang_w_d 파일입니다 20개 W, D 웨이트값들에 대해 각가속도 실험을 한 결과 도출 코드입니다.
+3. Surrogate Model 도출
+- 아이디어와 방식은 선형회귀와 동일합니다. 다만, 1차원의 직선이 아닌 3차원의 곡평면 형태로 인풋에 대한 아웃풋을 도출해냅니다.
+- 선형회귀보다 더 정확한 각속도 output을 도출해낼 수 있을 것입니다.
+- 해당 코드파일은 output들을 서로게이트 모델로 회귀시키고 예측값을 내는 모델 생성 코드입니다.
+"""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -82,7 +92,7 @@ ax4.set_xlabel('sample index'); ax4.set_ylabel('residual (y - y_pred)')
 ax4.set_title('잔차')
 
 plt.tight_layout()
-# plt.savefig('surrogate_w_d/experiment_data/surrogate_model_completed.png')
+plt.savefig('source/research/body_control/path_planning/tank_cornering_surrogate_w_d/surrogate_model_completed.png')
 plt.show()
 
 # 모델 저장 / 예측 csv 저장

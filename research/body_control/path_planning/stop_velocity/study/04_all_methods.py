@@ -153,5 +153,5 @@ for ax, method in zip(axes, methods):
     process_and_plot(df, method, ax, min_running_time=17.0)
 
 plt.tight_layout()
-# plt.savefig('research/body_control/path_planning/stop_velocity/study/visualization/stop_all_methods.png')
+plt.savefig('source/research/body_control/path_planning/stop_velocity/stop_all_methods.png')
 plt.show()
