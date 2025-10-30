@@ -137,7 +137,7 @@ def create_nodes_for_rightside(z, z_move, buffer_distance, waypoints):
         (270, 210),
         (240, 225),
         (210, 245),
-        (150, 270),
+        (120, 270),
         (0,   285),
     ]
 

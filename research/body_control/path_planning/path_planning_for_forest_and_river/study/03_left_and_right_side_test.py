@@ -1,3 +1,9 @@
+"""
+포레스트 앤 리버 맵에서 강만 피하는 주행경로 만들기.
+
+credit by : oixxta
+
+"""
 import matplotlib.pyplot as plt
 import math
 
@@ -99,15 +105,12 @@ def create_nodes_for_leftside(z, z_move, buffer_distance, waypoints):
 
     return waypoints
 
-#create_nodes_for_leftside(5, z_move=10, buffer_distance=5, waypoints=waypoints)
-
-
 def create_nodes_for_rightside(z, z_move, buffer_distance, waypoints):
     zones = [
         (270, 210),
         (240, 225),
         (210, 245),
-        (150, 270),
+        (120, 270),
         (0,   285),
     ]
 
@@ -135,22 +138,23 @@ def create_nodes_for_rightside(z, z_move, buffer_distance, waypoints):
 
     return waypoints
 
-create_nodes_for_rightside(295, z_move = 1, buffer_distance=5, waypoints=waypoints)
+create_nodes_for_leftside(5, z_move=10, buffer_distance=5, waypoints=waypoints)
+create_nodes_for_rightside(295, z_move=10, buffer_distance=5, waypoints=waypoints)
 
 print(waypoints.to_list())
 
 ### 시각화
 river_cells_down_scaled = [
-        (0, 5), (0, 6),
-                (1, 6), (1, 7),
-                (2, 6), (2, 7), (2, 8),
-                (3, 6), (3, 7), (3, 8),
-                        (4, 7), (4, 8),
+        (9, 5), (9, 6),
+                (8, 6), (8, 7),
+                (7, 6), (7, 7), (7, 8),
+                (6, 6), (6, 7), (6, 8),
                         (5, 7), (5, 8),
-                        (6, 7), (6, 8), (6, 9),
-                        (7, 7), (7, 8), (7, 9),
-                        (8, 7), (8, 8), (8, 9),
-                        (9, 7), (9, 8), (9, 9),
+                        (4, 7), (4, 8),
+                        (3, 7), (3, 8), (3, 9),
+                        (2, 7), (2, 8), (2, 9),
+                        (1, 7), (1, 8), (1, 9),
+                        (0, 7), (0, 8), (0, 9),
 ]
 
 ### 해당 좌표들을 그대로 300 * 300으로 바꿈.
@@ -161,24 +165,17 @@ river_cells = [
 ]
 
 def visualize_waypoints(waypoints, river_cells=None, grid_size=30):
-    """
-    waypoints: WaypointList 객체
-    river_cells: [(x, z), ...] 강 구역 좌표 (optional)
-    grid_size: 격자 단위 (기본 30)
-    """
-
     fig, ax = plt.subplots(figsize=(6,6))
     ax.set_xlim(0, 300)
     ax.set_ylim(0, 300)
     ax.set_aspect('equal')
-    ax.invert_yaxis()  # 위쪽이 0이 되도록 (맵 좌표계 맞춤)
 
     # === 격자선 ===
     for i in range(0, 301, grid_size):
         ax.axhline(i, color='lightgray', linewidth=0.5)
         ax.axvline(i, color='lightgray', linewidth=0.5)
 
-    # === 강 구역 표시 ===
+    # === 강 구역 ===
     if river_cells:
         for (x, z) in river_cells:
             rect = plt.Rectangle(
@@ -188,7 +185,7 @@ def visualize_waypoints(waypoints, river_cells=None, grid_size=30):
             )
             ax.add_patch(rect)
 
-    # === 웨이포인트 표시 ===
+    # === 웨이포인트 ===
     wps = waypoints.to_list()
     if not wps:
         print("No waypoints to visualize.")
@@ -197,10 +194,8 @@ def visualize_waypoints(waypoints, river_cells=None, grid_size=30):
     xs = [wp['x'] for wp in wps]
     zs = [wp['z'] for wp in wps]
 
-    # 선 연결 (파란색 경로)
     ax.plot(xs, zs, '-o', color='blue', markersize=4, linewidth=1.5)
 
-    # 순서 번호 (디버그용)
     for i, (x, z) in enumerate(zip(xs, zs)):
         ax.text(x, z - 3, str(i), fontsize=7, color='black', ha='center')
 
@@ -209,4 +204,5 @@ def visualize_waypoints(waypoints, river_cells=None, grid_size=30):
     plt.ylabel("Z")
     plt.tight_layout()
     plt.show()
-visualize_waypoints(waypoints, river_cells=river_cells)
+
+visualize_waypoints(waypoints, river_cells=river_cells, grid_size=30)
