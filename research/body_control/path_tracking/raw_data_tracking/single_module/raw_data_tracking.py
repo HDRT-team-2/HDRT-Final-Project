@@ -221,14 +221,13 @@ def obstacle_auto_planning_and_generate_circle_nodes(obstacles):
 
     if len(obstacles) == 4:
         sorted_list = []
-
         for waypoint in waypoints.to_list():
-            sorted_list.append((waypoint['x'], waypoint['z']))
+
             waypoints.pop()
         print("sorted_list: ", sorted_list)
 
         for i in sorted_list:
-            generate_circle_nodes(i[0], i[1], num_nodes=12, radius=50, start_pos_angle=330, reverse=True)
+            generate_circle_nodes(i[0], i[1], num_nodes=12, radius=35, start_pos_angle=330, reverse=True)
 
         print("생성된 원형 경로: ", waypoints.to_list())
 
