@@ -21,8 +21,8 @@ INPUT_DIR = r"c:\PYSOU\final_project\labeling\input"  # 원본 이미지 폴더
 OUTPUT_DIR = r"c:\PYSOU\final_project\labeling\output"  # 라벨링 결과 저장 폴더
 CONF_THRES = 0.5  # YOLO 탐지 신뢰도 threshold
 
-# YOLO 모델: 기본 YOLOv8n 모델 사용
-MODEL_PATH = "yolov8n.pt"
+# YOLO 모델: 기본 YOLOv9e 모델 사용
+MODEL_PATH = "yolov9e.pt"
 
 # obstacle별 클래스 번호 통일 (라벨링 시 사용)
 CLASS_MAPPING = {
