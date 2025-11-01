@@ -10,7 +10,6 @@ interface PositionMessage {
   type: 'position_update'
   x: number
   y: number
-  angle: number
 }
 
 /**
@@ -41,12 +40,11 @@ export function usePositionWebSocket() {
       // onMessage
       (data: PositionMessage) => {
         // 백엔드에서 보내는 메시지 형식:
-        // { type: 'position_update', x: 150, y: 200, angle: 45 }
+        // { type: 'position_update', x: 150, y: 200 }
         if (data.type === 'position_update') {
           const position: TankPosition = {
             x: data.x,
-            y: data.y,
-            angle: data.angle
+            y: data.y
           }
           
           positionStore.updateCurrentPosition(position)

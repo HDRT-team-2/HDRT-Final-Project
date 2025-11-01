@@ -8,8 +8,7 @@ export const usePositionStore = defineStore('position', () => {
   // 현재 위치 (WebSocket으로 업데이트예정)
   const current = ref<TankPosition>({
     x: 150,
-    y: 150,
-    angle: 0
+    y: 150
   })
 
   // 목표 위치 (사용자 입력 또는 지도 클릭으로 변경 예정)
@@ -29,12 +28,9 @@ export const usePositionStore = defineStore('position', () => {
   }
 
   // 현재 위치 부분 업데이트
-  function setCurrentPosition(x: number, y: number, angle?: number) {
+  function setCurrentPosition(x: number, y: number) {
     current.value.x = x
     current.value.y = y
-    if (angle !== undefined) {
-      current.value.angle = angle
-    }
   }
 
   //목표 위치 설정 (TargetInput 또는 Map에서 호출)
@@ -48,7 +44,7 @@ export const usePositionStore = defineStore('position', () => {
 
   // 목표 위치 초기화
   function clearTarget() {
-    current.value = { x: 150, y: 150, angle: 0 }
+    current.value = { x: 150, y: 150 }
     target.value = null
   }
 
