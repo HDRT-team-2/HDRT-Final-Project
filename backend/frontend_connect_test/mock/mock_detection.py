@@ -9,11 +9,32 @@ from .mock_fire import push_mock_fire_event
 
 # 객체 클래스 ID
 CLASS_IDS = {
-    'PERSON': 0,
-    'TANK': 1,
-    'CAR': 2,
-    'TRUCK': 7
+    'OTHER': 0,
+    'CAR2': 1,
+    'CAR3': 2,
+    'CAR4': 3,
+    'HUMAN1': 4,
+    'TANK1': 5,
+    'ROCK1': 6,
+    'ROCK2': 7,
+    'MINE1': 8,
+    'WALL2': 9,
+    'WALL2X10': 10,
 }
+
+RANDOM_CLASS_IDS = [
+    CLASS_IDS['CAR2'],
+    CLASS_IDS['CAR3'],
+    CLASS_IDS['CAR4'],
+    CLASS_IDS['HUMAN1'],
+    CLASS_IDS['TANK1'],
+    CLASS_IDS['ROCK1'],
+    CLASS_IDS['ROCK2'],
+    CLASS_IDS['MINE1'],
+    CLASS_IDS['WALL2'],
+    CLASS_IDS['WALL2X10'],
+    CLASS_IDS['OTHER'],
+]
 
 
 # 추적 ID 카운터
@@ -84,23 +105,18 @@ def generate_mock_detection():
     
     for _ in range(num_objects):
         # 랜덤 클래스 선택
-        class_id = random.choice([
-            CLASS_IDS['PERSON'],
-            CLASS_IDS['TANK'],
-            CLASS_IDS['CAR'],
-            CLASS_IDS['TRUCK']
-        ])
+        class_id = random.choice(RANDOM_CLASS_IDS)
 
         obj = {
-            'tracking_id': tracking_id_counter,
-            'class_id': class_id,
-            'x': round(random.uniform(0, 300), 2),
-            'y': round(random.uniform(0, 300), 2),
-            'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')
+        'tracking_id': tracking_id_counter,
+        'class_id': class_id,
+        'x': round(random.uniform(0, 300), 2),
+        'y': round(random.uniform(0, 300), 2),
+        'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')
         }
 
         # tank 객체면 fire 이벤트도 mock으로 push
-        if class_id == CLASS_IDS['TANK']:
+        if class_id == CLASS_IDS['TANK1']:
             push_mock_fire_event(obj['tracking_id'])
 
         objects.append(obj)
