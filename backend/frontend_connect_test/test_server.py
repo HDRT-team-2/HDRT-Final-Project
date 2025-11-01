@@ -16,7 +16,11 @@ from flask_cors import CORS
 import time
 import threading
 from mock import generate_mock_detection, generate_mock_fire, set_target_position, set_position_update_callback
-from mock import set_detection_update_callback, set_detection_target
+from mock import set_detection_update_callback, set_detection_target, set_fire_update_callback
+# Fire 콜백 등록 (push 구조)
+def emit_fire_to_frontend(data):
+    socketio.emit('fire_result', data)
+set_fire_update_callback(emit_fire_to_frontend)
 
 # Flask 앱 생성
 app = Flask(__name__)

@@ -5,6 +5,7 @@ Detection Mock 데이터 생성
 
 import random
 import time
+from .mock_fire import push_mock_fire_event
 
 # 객체 클래스 ID
 CLASS_IDS = {
@@ -89,15 +90,20 @@ def generate_mock_detection():
             CLASS_IDS['CAR'],
             CLASS_IDS['TRUCK']
         ])
-        
-        objects.append({
+
+        obj = {
             'tracking_id': tracking_id_counter,
             'class_id': class_id,
             'x': round(random.uniform(0, 300), 2),
             'y': round(random.uniform(0, 300), 2),
             'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')
-        })
-        
+        }
+
+        # tank 객체면 fire 이벤트도 mock으로 push
+        if class_id == CLASS_IDS['TANK']:
+            push_mock_fire_event(obj['tracking_id'])
+
+        objects.append(obj)
         tracking_id_counter += 1
     
     return {

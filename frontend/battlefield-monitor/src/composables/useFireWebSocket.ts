@@ -36,12 +36,6 @@ export function useFireWebSocket() {
           console.log(`발포 수신: 대상 [${data.target_tracking_id}]`)
         }
         
-        // 명중 결과 이벤트
-        else if (data.type === 'hit_result') {
-          fireStore.updateHitResult(data as HitResultResponse)
-          const result = data.hit ? '명중' : '미명중'
-          console.log(`${result} 수신: 대상 [${data.target_tracking_id}]`)
-        }
       },
       // onError
       (error) => {

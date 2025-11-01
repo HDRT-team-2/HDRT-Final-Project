@@ -5,7 +5,6 @@ interface FireScheduleItem {
   id: string;
   target_tracking_id: number;
   firedAt: Date;
-  hitStatus: 'hit' | 'miss' | 'pending';
 }
 
 const props = defineProps<{
@@ -14,27 +13,8 @@ const props = defineProps<{
 
 const columns = [
   { key: 'target_tracking_id', label: '대상 ID', align: 'center' as const, width: '80px' },
-  { key: 'fireTime', label: '발포시간', align: 'center' as const, width: '100px' },
-  { key: 'hitStatus', label: '적중', align: 'center' as const, width: '80px' }
+  { key: 'fireTime', label: '발포시간', align: 'center' as const, width: '100px' }
 ];
-
-const getHitStatusColor = (hitStatus: string) => {
-  switch (hitStatus) {
-    case 'hit': return 'text-green-600 bg-green-100';
-    case 'miss': return 'text-red-600 bg-red-100';
-    case 'pending': return 'text-orange-600 bg-orange-100';
-    default: return 'text-gray-600 bg-gray-100';
-  }
-};
-
-const getHitStatusText = (hitStatus: string) => {
-  switch (hitStatus) {
-    case 'hit': return '적중';
-    case 'miss': return '빗나감';
-    case 'pending': return '대기중';
-    default: return hitStatus;
-  }
-};
 
 // 시간 포맷 (HH:MM:SS)
 const formatTime = (date: Date) => {
@@ -63,16 +43,6 @@ const formatTime = (date: Date) => {
     <!-- 발포시간 컬럼 -->
     <template #fireTime="{ row }">
       <span class="font-mono text-xs">{{ formatTime(row.firedAt) }}</span>
-    </template>
-    
-    <!-- 적중 상태 컬럼 -->
-    <template #hitStatus="{ value }">
-      <span 
-        class="px-2 py-1 rounded-full text-xs font-medium"
-        :class="getHitStatusColor(value)"
-      >
-        {{ getHitStatusText(value) }}
-      </span>
     </template>
     
     <!-- 빈 상태 -->
