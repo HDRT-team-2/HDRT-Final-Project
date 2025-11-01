@@ -41,7 +41,7 @@ async function handleTestExecute() {
   
   if (success) {
     isMoving.value = true
-    console.log('✅ Position 테스트 실행')
+    console.log(' Position 테스트 실행')
   } else {
     console.error('❌ 실행 실패:', error.value)
   }
@@ -49,7 +49,7 @@ async function handleTestExecute() {
   // 2. Detection WebSocket 시작 (적 전차 발견 시 자동 발포)
   mockDetectionWs.start()
   isDetecting.value = true
-  console.log('✅ Detection + Fire 테스트 실행')
+  console.log(' Detection + Fire 테스트 실행')
 }
 
 /**
@@ -70,16 +70,15 @@ function handleTestStop() {
   // 발포 기록 초기화
   fireStore.clearFires()
   
-  console.log('🛑 테스트 정지')
+  console.log(' 테스트 정지')
 }
 </script>
 
 <template>
-  <div class="p-3 bg-gray-100 border-2 border-dashed border-red-400 rounded-lg">
-    <h3 class="text-sm font-bold text-red-500 mb-2">🧪 테스트 컨트롤</h3>
-    
+  <div class="p-3 bg-gray-100 border-2 border-dashed border-red-400 rounded-lg flex flex-row items-center gap-6">
+    <h3 class="text-sm font-bold text-red-500 mr-4 whitespace-nowrap">테스트 컨트롤</h3>
     <!-- 버튼 -->
-    <div class="flex gap-2 mb-2">
+    <div class="flex gap-2">
       <button 
         @click="handleTestExecute"
         :disabled="isMoving || isSending"
@@ -87,7 +86,6 @@ function handleTestStop() {
       >
         {{ isSending ? '전송 중...' : '테스트 실행' }}
       </button>
-      
       <button 
         @click="handleTestStop"
         :disabled="!isMoving"
@@ -96,13 +94,12 @@ function handleTestStop() {
         정지
       </button>
     </div>
-    
     <!-- 상태 표시 -->
-    <div class="text-xs space-y-1">
-      <p>전차 이동: {{ isMoving ? '🟢 진행 중' : '🔴 정지' }}</p>
-      <p>객체 탐지: {{ isDetecting ? '🟢 진행 중' : '🔴 정지' }}</p>
-      <p>목표 설정: {{ hasTarget ? `🎯 (${target?.x}, ${target?.y})` : '❌ 미설정' }}</p>
-      <p v-if="error" class="text-red-500 font-bold">{{ error }}</p>
+    <div class="text-xs space-y-1 ml-6">
+      <span class="mr-4">전차 이동: <span :class="isMoving ? 'text-green-600' : 'text-gray-500'">{{ isMoving ? '진행 중' : '정지' }}</span></span>
+      <span class="mr-4">객체 탐지: <span :class="isDetecting ? 'text-green-600' : 'text-gray-500'">{{ isDetecting ? '진행 중' : '정지' }}</span></span>
+      <span class="mr-4">목표 설정: <span :class="hasTarget ? 'text-blue-600' : 'text-gray-500'">{{ hasTarget ? `(${target?.x}, ${target?.y})` : '미설정' }}</span></span>
+      <span v-if="error" class="text-red-500 font-bold ml-2">{{ error }}</span>
     </div>
   </div>
 </template>
