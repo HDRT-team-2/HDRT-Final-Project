@@ -30,6 +30,7 @@ sending_position = False
 # HTTP 엔드포인트
 # ============================================
 
+
 @app.route('/api/target', methods=['POST'])
 def receive_target():
     """
@@ -37,12 +38,8 @@ def receive_target():
     Frontend에서 목표 설정 시 호출
     """
     data = request.get_json()
-    x = data.get('x')
-    y = data.get('y')
-    
-    print(f"[Mock] 목표 위치 수신: x={x}, y={y}")
-    
-    return jsonify({"status": "success"})
+    print(f"[Mock] 목표 위치 전체 데이터: {data}")
+    return jsonify({"status": "success", "received": data})
 
 @app.route('/health', methods=['GET'])
 def health_check():
