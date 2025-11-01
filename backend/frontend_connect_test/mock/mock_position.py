@@ -36,6 +36,12 @@ def generate_mock_position():
         if dist < step:
             current_position['x'] = target_position[0]
             current_position['y'] = target_position[1]
+            # 목표 도달 시 detection
+            try:
+                from .mock_detection import stop_detection_loop
+                stop_detection_loop()
+            except Exception:
+                pass
             target_position = None  # 도달하면 목표 해제
             updated = True
         else:
@@ -67,7 +73,7 @@ def start_position_update_loop():
             pos, updated = generate_mock_position()
             if updated and position_update_callback:
                 position_update_callback(pos)
-            time.sleep(0.5)
+            time.sleep(0.1)
     threading.Thread(target=loop, daemon=True).start()
 
 def stop_position_update_loop():
