@@ -58,11 +58,15 @@ def handle_connect():
     """클라이언트 연결"""
     print('[Mock] Frontend 연결됨')
     emit('connected', {'message': 'Connected to mock backend'})
-
-    global sending_detection
+    
+    # 자동으로 Detection 전송 시작
+    global sending_detection, sending_position
     sending_detection = True
+    sending_position = True
     print('[Mock] Detection 자동 전송 시작')
+    print('[Mock] Position 자동 전송 시작')
     threading.Thread(target=send_detection_loop, daemon=True).start()
+    threading.Thread(target=send_position_loop, daemon=True).start()
 
 @socketio.on('disconnect')
 def handle_disconnect():
