@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useFireStore } from '@/stores/fire'
 import { SocketIOService } from '@/services/socketio_service'
-import type { FireResponse, HitResultResponse } from '@/types/fire'
+import type { FireResponse} from '@/types/fire'
 
 /**
  * SocketIO로 발포/명중 이벤트 수신 (실시간)

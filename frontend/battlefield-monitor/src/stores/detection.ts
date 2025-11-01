@@ -15,7 +15,7 @@ export const useDetectionStore = defineStore('detection', () => {
   // 클래스별 객체 수
   const classCounts = computed(() => {
     const counts: Record<ObjectClassName, number> = {
-      person: 0,
+      human: 0,
       tank: 0,
       car: 0,
       truck: 0
@@ -33,13 +33,13 @@ export const useDetectionStore = defineStore('detection', () => {
   
   // 민간객체 총 수
   const civilianCount = computed(() => 
-    classCounts.value.person + 
+    classCounts.value.human + 
     classCounts.value.car + 
     classCounts.value.truck
   )
   
   // 민간인 수
-  const personCount = computed(() => classCounts.value.person)
+  const personCount = computed(() => classCounts.value.human)
 
   // 민간 차량 수 (car + truck)
   const vehicleCount = computed(() =>
@@ -54,7 +54,7 @@ export const useDetectionStore = defineStore('detection', () => {
   // 백엔드 데이터를 DetectedObject로 변환
 
   function parseDetectionResponse(data: DetectionResponse): DetectedObject {
-    const class_name = CLASS_ID_TO_NAME[data.class_id] || 'person'
+    const class_name = CLASS_ID_TO_NAME[data.class_id] || 'human'
     
     return {
       tracking_id: data.tracking_id,

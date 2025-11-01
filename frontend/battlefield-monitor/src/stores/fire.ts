@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { FireEvent, FireResponse, HitResultResponse, HitResult } from '@/types/fire'
+import type { FireEvent, FireResponse } from '@/types/fire'
 
 export const useFireStore = defineStore('fire', () => {
   // State-----------------------------------------
