@@ -17,10 +17,6 @@ import time
 import threading
 from mock import generate_mock_detection, generate_mock_fire, set_target_position, set_position_update_callback
 from mock import set_detection_update_callback, set_detection_target, set_fire_update_callback
-# Fire 콜백 등록 (push 구조)
-def emit_fire_to_frontend(data):
-    socketio.emit('fire_result', data)
-set_fire_update_callback(emit_fire_to_frontend)
 
 # Flask 앱 생성
 app = Flask(__name__)
@@ -98,6 +94,7 @@ set_position_update_callback(emit_position_to_frontend)
 # ============================================
 
 @socketio.on('fire')
+# TODO 실데이터 연결시 삭제
 def handle_fire(data):
     """발포 명령 수신"""
     target_id = data.get('target_tracking_id')
@@ -106,6 +103,15 @@ def handle_fire(data):
     # 발포 결과 생성
     result = generate_mock_fire(target_id)
     emit('fire_result', result)
+
+
+# Fire 콜백 등록 (push 구조)
+def emit_fire_to_frontend(data):
+    print(f"fire: {data}")
+    socketio.emit('fire_result', data)
+
+# TODO 실데이터 연결시 삭제
+set_fire_update_callback(emit_fire_to_frontend)
 
 # ============================================
 # 서버 실행
@@ -116,12 +122,6 @@ if __name__ == '__main__':
     # detection mock 루프는 목표 좌표가 들어올 때 시작됨
     print('=' * 60)
     print('[Mock Server] Frontend 테스트 서버 시작')
-    print('=' * 60)
-    print('HTTP:      http://localhost:5000')
-    print('WebSocket: ws://localhost:5000')
-    print('')
-    print('주의: 테스트 전용 서버입니다.')
-    print('실제 배포 시 이 폴더 전체를 삭제하세요.')
     print('=' * 60)
     
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
