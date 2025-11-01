@@ -1,0 +1,61 @@
+"""
+목적 : 'get_action', 'detect', 'info'의 모든 순서 조합(3! = 6가지)을 만들어서
+       각 패턴이 로그 안에 몇 번 등장했는지 출력하는 코드
+"""
+
+import re
+import itertools
+
+def analyze_three_patterns(log: str):
+    words = ["get_action", "detect", "info"]
+
+    # 🔹 3개 단어의 모든 순서 조합 생성 (4개 중 3개 선택 → 4P3 = 24가지)
+    all_patterns = list(itertools.permutations(words, 3))
+
+    print("────────────────────────────")
+    print("로그 패턴 분석 결과 (3단어 조합)")
+    print("────────────────────────────")
+
+    # 각 패턴의 등장 횟수 세기
+    for idx, p in enumerate(all_patterns, start=1):
+        pattern_str = r"\s*→\s*".join(p)  # "단어 → 단어 → 단어" 형식
+        regex = rf"{pattern_str}"
+        count = len(re.findall(regex, log))
+        print(f"{idx:2d}. {' → '.join(p)} : {count}회")
+
+    print("────────────────────────────")
+
+
+# 🔹 분석할 로그 문자열
+log_text = """
+get_action → detect → get_action → detect → info
+→ get_action → detect → update_bullet → info
+→ get_action → detect → info → get_action → info
+→ detect → get_action → info → detect → get_action
+→ info → detect → get_action → info → get_action
+→ detect → info → get_action → info → detect → get_action
+→ info → detect → get_action → info → detect → get_action
+→ info → get_action → info → detect → info → get_action
+→ detect → info → get_action → detect → info → get_action
+→ detect → info → get_action → update_bullet → info
+→ detect → get_action → info → get_action → detect → info
+→ get_action → detect → info → get_action → info → detect
+→ get_action → info → detect → get_action → info → detect
+→ get_action → info → get_action → info → detect → info
+→ get_action → detect → info → get_action → detect → info
+→ get_action → info → update_bullet → get_action → detect
+→ info → get_action → detect → info → get_action → info
+→ detect → get_action → detect → info → get_action → info
+→ detect → get_action → info → detect → get_action → info
+→ get_action → info → detect → get_action → detect → info
+→ get_action → detect → info → get_action → detect → info
+→ get_action → info → update_bullet → get_action → detect
+→ info → get_action → detect → info → get_action → info
+→ detect → get_action → info → detect → get_action → info
+→ get_action → detect → info → get_action → detect → info
+→ get_action → info → detect → get_action → info → detect
+→ get_action → info → get_action → detect → info → start
+"""
+
+# 🔹 함수 실행
+analyze_three_patterns(log_text)

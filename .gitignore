@@ -43,8 +43,6 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
-cover/
-
 # Jupyter Notebook
 .ipynb_checkpoints/
 */.ipynb_checkpoints/*
@@ -137,3 +135,30 @@ Desktop.ini
 tmp/
 temp/
 .tmp/
+# 파일 생성/수정
+nano .gitignore
+# 또는
+code .gitignore
+```
+
+**내용:**
+```
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python (나중에 backend용)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.env
