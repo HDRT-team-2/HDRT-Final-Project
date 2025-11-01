@@ -16,6 +16,7 @@ from flask_cors import CORS
 import time
 import threading
 from mock import generate_mock_detection, generate_mock_fire, set_target_position, set_position_update_callback
+from mock import set_detection_update_callback, set_detection_target
 
 # Flask 앱 생성
 app = Flask(__name__)
@@ -39,10 +40,13 @@ def receive_target():
     Frontend에서 목표 설정 시 호출
     """
     data = request.get_json()
-    print(f"[Mock] 목표 위치 전체 데이터: {data}")
+    print(f"목표 위치 전체 데이터: {data}")
+    # TODO 실데이터 연결시 삭제
     # 목표 좌표를 mock_position에 전달
     if 'x' in data and 'y' in data:
         set_target_position(data['x'], data['y'])
+        # mock 환경: detection도 목표 좌표 들어오면 생성 시작
+        set_detection_target(data['x'], data['y'])
     return jsonify({"status": "success", "received": data})
 
 @app.route('/health', methods=['GET'])
@@ -50,54 +54,22 @@ def health_check():
     """서버 상태 확인"""
     return jsonify({"status": "ok", "message": "Mock server running"})
 
+
 # ============================================
-# WebSocket - Detection
+# WebSocket - Detection (push 구조)
 # ============================================
+#
+# [실데이터 연동 시 교체 방법]
+# 1. mock_detection.py 대신 실제 객체 탐지/센서 모듈에서 detection 값이 갱신될 때마다 아래 콜백(emit_detection_to_frontend)을 호출하면 됩니다.
+# 2. set_detection_update_callback 대신, 실데이터 소스에서 detection이 바뀔 때마다 emit_detection_to_frontend(data)를 직접 호출하면 됩니다.
+#    (즉, push 구조는 그대로 두고, detection 갱신 트리거만 실제 데이터로 바꿔주면 됨)
 
-@socketio.on('connect')
-def handle_connect():
-    """클라이언트 연결"""
-    print('[Mock] Frontend 연결됨')
-    emit('connected', {'message': 'Connected to mock backend'})
-    # Detection만 자동 전송 시작
-    global sending_detection
-    sending_detection = True
-    print('[Mock] Detection 자동 전송 시작')
-    threading.Thread(target=send_detection_loop, daemon=True).start()
+def emit_detection_to_frontend(data):
+    print(f"detection: {data}")
+    socketio.emit('detection', data)
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    """클라이언트 연결 해제"""
-    global sending_detection
-    sending_detection = False
-    print('[Mock] Frontend 연결 해제')
-
-@socketio.on('start_detection')
-def handle_start_detection():
-    """Detection 데이터 전송 시작"""
-    global sending_detection
-    sending_detection = True
-    print('[Mock] Detection 전송 시작')
-    threading.Thread(target=send_detection_loop, daemon=True).start()
-
-@socketio.on('stop_detection')
-def handle_stop_detection():
-    """Detection 데이터 전송 중지"""
-    global sending_detection
-    sending_detection = False
-    print('[Mock] Detection 전송 중지')
-
-def send_detection_loop():
-    """Detection Mock 데이터 주기적 전송"""
-    global sending_detection
-    while sending_detection:
-        # TODO: 실제 개발 시 아래 Mock 부분을 실제 로직으로 교체
-        data = generate_mock_detection()  # <- Mock (삭제 예정)
-        # data = get_real_detection()     # <- 실제 로직 (추가 예정)
-        
-        socketio.emit('detection', data)
-        print(f"[Mock] Detection 전송: {len(data['objects'])}개 객체")
-        time.sleep(0.5)  # 0.5초마다
+# 실데이터 연결시 삭제
+set_detection_update_callback(emit_detection_to_frontend)
 
 # ============================================
 # WebSocket - Position
@@ -136,6 +108,8 @@ def handle_fire(data):
 # ============================================
 
 if __name__ == '__main__':
+    # Detection push 콜백 구조만 등록 (mock 환경에서만)
+    # detection mock 루프는 목표 좌표가 들어올 때 시작됨
     print('=' * 60)
     print('[Mock Server] Frontend 테스트 서버 시작')
     print('=' * 60)

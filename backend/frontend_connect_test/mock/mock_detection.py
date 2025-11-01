@@ -14,8 +14,48 @@ CLASS_IDS = {
     'TRUCK': 7
 }
 
+
 # 추적 ID 카운터
 tracking_id_counter = 1
+
+
+# Detection push 구조를 위한 콜백 등록 및 목표 기반 mock 생성
+_detection_update_callback = None
+_detection_target = None
+_detection_loop_thread = None
+_detection_loop_running = False
+
+def set_detection_update_callback(cb):
+    global _detection_update_callback
+    _detection_update_callback = cb
+
+def set_detection_target(x, y):
+    """
+    목표 좌표가 들어오면 detection mock 데이터 생성 루프를 시작
+    """
+    global _detection_target, _detection_loop_running, _detection_loop_thread
+    _detection_target = (x, y)
+    if not _detection_loop_running:
+        _detection_loop_running = True
+        import threading
+        def loop():
+            while _detection_loop_running and _detection_target is not None:
+                data = generate_mock_detection_with_target(_detection_target)
+                if _detection_update_callback:
+                    _detection_update_callback(data)
+                time.sleep(2.0)
+        _detection_loop_thread = threading.Thread(target=loop, daemon=True)
+        _detection_loop_thread.start()
+
+def stop_detection_loop():
+    global _detection_loop_running
+    _detection_loop_running = False
+
+def generate_mock_detection_with_target(target):
+    """
+    목표 좌표가 들어온 이후부터 랜덤 detection 객체를 생성 (객체 위치는 랜덤)
+    """
+    return generate_mock_detection()
 
 def generate_mock_detection():
     """
@@ -37,8 +77,8 @@ def generate_mock_detection():
     """
     global tracking_id_counter
     
-    # 1~3개의 랜덤 객체 생성
-    num_objects = random.randint(1, 3)
+    # 1~2개의 랜덤 객체 생성
+    num_objects = random.randint(1, 2)
     objects = []
     
     for _ in range(num_objects):
