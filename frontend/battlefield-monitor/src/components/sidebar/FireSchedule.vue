@@ -14,10 +14,7 @@ const schedules = computed(() => {
   return fires.value.map(fire => ({
     id: fire.id,
     target_tracking_id: fire.target_tracking_id,
-    firedAt: fire.firedAt,
-    hitStatus: (fire.hitResult 
-      ? (fire.hitResult.hit ? 'hit' : 'miss')
-      : 'pending') as 'hit' | 'miss' | 'pending'  // ← 타입 명시
+    firedAt: fire.firedAt
   }))
 })
 </script>

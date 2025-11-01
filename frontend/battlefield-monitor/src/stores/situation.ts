@@ -91,23 +91,6 @@ export const useSituationStore = defineStore('situation', () => {
           })
           addedFireIds.value.add(fireEventId)
         }
-        
-        // 명중 결과 이벤트
-        if (fire.hitResult) {
-          const hitEventId = `hit-${fire.id}`
-          if (!addedFireIds.value.has(hitEventId)) {
-            addEvent({
-              id: hitEventId,
-              type: fire.hitResult.hit ? 'hit' : 'miss',
-              time: fire.hitResult.hitAt,
-              tracking_id: fire.target_tracking_id,
-              message: fire.hitResult.hit 
-                ? `명중! [대상: ${fire.target_tracking_id}]`
-                : `미명중 [대상: ${fire.target_tracking_id}]`
-            })
-            addedFireIds.value.add(hitEventId)
-          }
-        }
       })
     },
     { deep: true }

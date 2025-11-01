@@ -3,10 +3,6 @@ import AppHeader from '@/layouts/AppHeader.vue';
 import MainLayout from '@/layouts/MainLayout.vue';
 import CommandPanel from '@/layouts/CommandPanel.vue';
 
-import { useMockPositionWebSocket } from '@/composables/usePositionWebSocket'
-
-// Mock WebSocket 시작
-useMockPositionWebSocket()
 </script>
 
 <template>

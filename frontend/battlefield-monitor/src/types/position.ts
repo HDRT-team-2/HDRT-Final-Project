@@ -3,10 +3,6 @@ export interface Coordinate {
   x: number
   y: number
 }
-// 내 탱크 위치를 나타내는 인터페이스
-export interface TankPosition extends Coordinate {
-  angle: number
-}
 // 목표 위치를 나타내는 인터페이스
 export interface TargetPosition extends Coordinate {
   setAt?: Date

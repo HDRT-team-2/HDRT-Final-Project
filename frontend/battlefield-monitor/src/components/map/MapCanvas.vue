@@ -82,7 +82,7 @@ function coordToSvg(x: number, y: number) {
 
       <!-- 민간인/차량 (원) -->
        <PersonIcon 
-        v-else-if="obj.class_name === 'person'"
+        v-else-if="obj.class_name === 'human'"
         :x="coordToSvg(obj.position.x, obj.position.y).x"
         :y="coordToSvg(obj.position.x, obj.position.y).y"
         :size="8"

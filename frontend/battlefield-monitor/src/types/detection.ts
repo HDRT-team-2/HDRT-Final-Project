@@ -2,30 +2,49 @@ import type { Coordinate } from './position'
 
 //객체 클래스 ID
 export enum ObjectClassId {
-  PERSON = 0,    // 민간인
-  TANK = 1,      // 적 전차
-  CAR = 2,       // 민간 차량
-  TRUCK = 7      // 민간 트럭
+  Other = 0,
+  Car2 = 1,
+  Car3 = 2,
+  Car4 = 3,
+  Human1 = 4,
+  Tank1 = 5,
+  Rock1 = 6,
+  Rock2 = 7,
+  Mine1 = 8,
+  Wall2 = 9,
+  Wall2X10 = 10,
 }
 
 //객체 클래스 이름
-export type ObjectClassName = 'person' | 'tank' | 'car' | 'truck'
+export type ObjectClassName = 'tank' | 'car' | 'truck' | 'other' | 'human' | 'rock_small' | 'rock_large' | 'mine' | 'wall'
 
 //클래스 ID → 이름 매핑
 export const CLASS_ID_TO_NAME: Record<number, ObjectClassName> = {
-  [ObjectClassId.PERSON]: 'person',
-  [ObjectClassId.TANK]: 'tank',
-  [ObjectClassId.CAR]: 'car',
-  [ObjectClassId.TRUCK]: 'truck'
+  [ObjectClassId.Other]: 'other',
+  [ObjectClassId.Car2]: 'car',
+  [ObjectClassId.Car3]: 'car',
+  [ObjectClassId.Car4]: 'car',
+  [ObjectClassId.Human1]: 'human',
+  [ObjectClassId.Tank1]: 'tank',
+  [ObjectClassId.Rock1]: 'rock_small',
+  [ObjectClassId.Rock2]: 'rock_large',
+  [ObjectClassId.Mine1]: 'mine',
+  [ObjectClassId.Wall2]: 'wall',
+  [ObjectClassId.Wall2X10]: 'wall',
 }
 
 //클래스 이름 한글
 
 export const CLASS_NAME_KR: Record<ObjectClassName, string> = {
-  person: '사람',
-  tank: '적 전차',
+  human: '보병',
+  tank: '전차',
   car: '차량',
-  truck: '트럭'
+  truck: '트럭',
+  other: '기타',
+  rock_small: '작은 바위',
+  rock_large: '큰 바위',
+  mine: '지뢰',
+  wall: '벽'
 }
 
 // 탐지된 객체
@@ -37,7 +56,6 @@ export interface DetectedObject {
   detectedAt: Date // 발견 시간
   lastUpdated: Date // 마지막 업데이트 시간
   distance?: number // 거리 (계산됨)
-  angle?: number // 각도 (계산됨)
 }
 
 // 백엔드에서 오는 원본 데이터

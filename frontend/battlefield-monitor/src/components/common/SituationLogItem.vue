@@ -19,20 +19,6 @@ const getEventStyle = (type: SituationEvent['type']) => {
         textColor: 'text-orange-700',
         label: '발포'
       };
-    case 'hit':
-      return {
-        bgColor: 'bg-green-50',
-        borderColor: 'border-green-200',
-        textColor: 'text-green-700',
-        label: '명중'
-      };
-    case 'miss':
-      return {
-        bgColor: 'bg-gray-100',
-        borderColor: 'border-gray-300',
-        textColor: 'text-gray-500',
-        label: '미명중'
-      };
     default:
       return {
         bgColor: 'bg-gray-50',
