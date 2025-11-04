@@ -6,14 +6,15 @@ import { useDetectionStore } from '@/stores/detection'
 import { computed } from 'vue'
 
 const detectionStore = useDetectionStore()
-const { tankCount, civilianCount, personCount, vehicleCount } = storeToRefs(detectionStore)
+const { tankCount, mineCount, enemyCount, civilianCount, personCount, vehicleCount } = storeToRefs(detectionStore)
 
 const tankItems = computed(() => [
-  { label: '전차', count: tankCount.value }
+  { label: '전차', count: tankCount.value },
+  { label: '보병', count: personCount.value },
+  { label: '지뢰', count: mineCount.value }
 ])
 
 const civilianItems = computed(() => [
-  { label: '사람', count: personCount.value },
   { label: '차량', count: vehicleCount.value }
 ])
 </script>
@@ -24,7 +25,7 @@ const civilianItems = computed(() => [
       <!-- 적 전차 -->
       <ObjectsList
         title="적"
-        :count="tankCount"
+        :count="enemyCount"
         bg-color="bg-red-50"
         border-color="border-red-200"
         text-color="text-red-700"

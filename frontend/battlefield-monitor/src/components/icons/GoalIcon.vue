@@ -6,37 +6,35 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 12
+  size: 10
 })
+
+// 화살표 비율 (원본 SVG 기준: 13x17)
+const scale = props.size / 10
+const arrowWidth = 13 * scale
+const arrowHeight = 17 * scale
+const color = '#0A2369'
+
+// 중심점을 (0,0)으로 맞추기 위한 offset
+const centerOffsetX = -arrowWidth / 2
+const centerOffsetY = -arrowHeight / 2
 </script>
 
 <template>
   <g>
-    <!-- 외곽선 -->
-    <circle 
-        :cx="props.x"
-        :cy="props.y"
-        :r="props.size"
-        fill="none"
-        stroke="#10b981"
-        stroke-width="3"
-        opacity="0.8"
+    <!-- 화살표 몸통 (세로 막대) -->
+    <rect
+      :x="props.x + centerOffsetX + 3 * scale"
+      :y="props.y + centerOffsetY"
+      :width="1 * scale"
+      :height="17 * scale"
+      :fill="color"
     />
-    <!-- 중앙점 -->
-    <circle 
-      :cx="props.x"
-      :cy="props.y"
-      :r="props.size * 0.3"
-      fill="#10b981"
+    
+    <!-- 화살표 머리 (삼각형) -->
+    <path
+      :d="`M ${props.x + centerOffsetX + 13 * scale} ${props.y + centerOffsetY + 3.5 * scale} L ${props.x + centerOffsetX + 3.25 * scale} ${props.y + centerOffsetY + 6.53109 * scale} V ${props.y + centerOffsetY + 0.468911 * scale} L ${props.x + centerOffsetX + 13 * scale} ${props.y + centerOffsetY + 3.5 * scale} Z`"
+      :fill="color"
     />
-    <!-- <text 
-      :x="props.x + props.size + 4"
-      :y="props.y + 4"
-      font-size="11"
-      fill="#10b981"
-      font-weight="bold"
-    >
-      목표
-    </text> -->
   </g>
 </template>

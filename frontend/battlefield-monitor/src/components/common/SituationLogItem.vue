@@ -7,16 +7,16 @@ const getEventStyle = (type: SituationEvent['type']) => {
   switch (type) {
     case 'detection':
       return {
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-200',
-        textColor: 'text-blue-700',
+        bgColor: 'bg-rotem-50',
+        borderColor: 'border-rotem-200',
+        textColor: 'text-rotem-700',
         label: '탐지'
       };
     case 'fire':
       return {
-        bgColor: 'bg-orange-50',
-        borderColor: 'border-orange-200',
-        textColor: 'text-orange-700',
+        bgColor: 'bg-warning-50',
+        borderColor: 'border-warning-200',
+        textColor: 'text-warning-700',
         label: '발포'
       };
     default:

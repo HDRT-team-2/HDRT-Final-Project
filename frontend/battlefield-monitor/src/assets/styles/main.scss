@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-// Variables (Tailwind 색상과 동기화)
-$primary-color: #0ea5e9;    // primary-500와 동일
-$secondary-color: #64748b;   // military-500와 동일  
-
 // Base styles
 body {
   font-family: 'Arial', sans-serif;
