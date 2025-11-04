@@ -8,6 +8,8 @@ import GoalIcon from '@/components/icons/GoalIcon.vue'
 import EnemyIcon from '@/components/icons/EnemyIcon.vue'
 import CarIcon from '@/components/icons/CarIcon.vue'
 import PersonIcon from '@/components/icons/PersonIcon.vue'
+import RockIcon from '../icons/RockIcon.vue'
+import MineIcon from '../icons/MineIcon.vue'
 
 interface Props {
   current: TankPosition    // 내 위치
@@ -77,10 +79,10 @@ function coordToSvg(x: number, y: number) {
         v-if="obj.class_name === 'tank'"
         :x="coordToSvg(obj.position.x, obj.position.y).x"
         :y="coordToSvg(obj.position.x, obj.position.y).y"
-        :size="12"
+        :size="20"
       />
 
-      <!-- 민간인/차량 (원) -->
+      <!-- 적 보병 (원) -->
        <PersonIcon 
         v-else-if="obj.class_name === 'human'"
         :x="coordToSvg(obj.position.x, obj.position.y).x"
@@ -93,13 +95,34 @@ function coordToSvg(x: number, y: number) {
         :y="coordToSvg(obj.position.x, obj.position.y).y"
         :size="10"
       />
+
+      <RockIcon 
+        v-else-if="obj.class_name === 'rock_small'"
+        :x="coordToSvg(obj.position.x, obj.position.y).x"
+        :y="coordToSvg(obj.position.x, obj.position.y).y"
+        :size="8"
+      />
+
+      <RockIcon 
+        v-else-if="obj.class_name === 'rock_large'"
+        :x="coordToSvg(obj.position.x, obj.position.y).x"
+        :y="coordToSvg(obj.position.x, obj.position.y).y"
+        :size="20"
+      />
+      
+      <MineIcon 
+        v-else-if="obj.class_name === 'mine'"
+        :x="coordToSvg(obj.position.x, obj.position.y).x"
+        :y="coordToSvg(obj.position.x, obj.position.y).y"
+        :size="14"
+      />
     </g>
     
     <!-- 내 전차 위치 (마지막에 그려서 맨 위에 표시) -->
      <MyTankIcon
       :x="coordToSvg(current.x, current.y).x"
       :y="coordToSvg(current.x, current.y).y"
-      :size="14"
+      :size="18"
     />
   </svg>
 </template>
