@@ -18,7 +18,7 @@ export default {
           700: '#081C54',
           800: '#06153F',
           900: '#040E2A',
-        }
+        },
         // Status Colors
         success: {
           50: '#f0fdf4',
@@ -28,6 +28,10 @@ export default {
         },
         warning: {
           50: '#FFF7ED',
+          100: '#FFEDD5',
+          200: '#FED7AA',
+          300: '#FDBA74',
+          400: '#FB923C',
           500: '#F97316',
           600: '#EA580C',
           700: '#C2410C',
