@@ -18,7 +18,12 @@ export const useDetectionStore = defineStore('detection', () => {
       human: 0,
       tank: 0,
       car: 0,
-      truck: 0
+      truck: 0,
+      mine: 0,
+      other: 0,
+      rock_small: 0,
+      rock_large: 0,
+      wall: 0
     }
     
     objects.value.forEach(obj => {
@@ -28,18 +33,29 @@ export const useDetectionStore = defineStore('detection', () => {
     return counts
   })
 
-  // 적 전차 수
-  const tankCount = computed(() => classCounts.value.tank)
+  // 적 탱크 수
+  const tankCount = computed(() => 
+    classCounts.value.tank
+  )
   
+  // 적 보병 수
+  const personCount = computed(() => classCounts.value.human)
+
+  // 지뢰 수
+  const mineCount = computed(() => classCounts.value.mine)
+
+  // 총 적 객체 수
+  const enemyCount = computed(() => 
+    tankCount.value + 
+    mineCount.value + 
+    personCount.value
+  )
+
   // 민간객체 총 수
   const civilianCount = computed(() => 
-    classCounts.value.human + 
     classCounts.value.car + 
     classCounts.value.truck
   )
-  
-  // 민간인 수
-  const personCount = computed(() => classCounts.value.human)
 
   // 민간 차량 수 (car + truck)
   const vehicleCount = computed(() =>
@@ -130,6 +146,8 @@ export const useDetectionStore = defineStore('detection', () => {
     // Computed
     classCounts,
     tankCount,
+    mineCount,
+    enemyCount,
     civilianCount,
     personCount,
     vehicleCount,

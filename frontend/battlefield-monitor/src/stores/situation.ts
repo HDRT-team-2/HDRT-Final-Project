@@ -47,7 +47,7 @@ export const useSituationStore = defineStore('situation', () => {
     events.value = []
     addedDetectionIds.value.clear()
     addedFireIds.value.clear()
-    console.log('🗑️ 모든 상황 로그 삭제')
+    console.log(' 모든 상황 로그 삭제')
   }
 
   // Watch: Detection Store 감시 --------------------------------
