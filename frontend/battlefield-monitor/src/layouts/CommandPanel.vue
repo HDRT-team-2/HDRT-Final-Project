@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import CommandHeader from '@/components/commandPanel/CommandHeader.vue';
 import CommandHistory from '@/components/commandPanel/CommandHistory.vue';
 import CommandInput from '@/components/commandPanel/CommandInput.vue';
+import { useChatCommand } from '@/composables/useChatCommand';  // ← 추가
 
 interface CommandEntry {
   id: number;
@@ -13,14 +14,15 @@ interface CommandEntry {
 
 const commandHistory = ref<CommandEntry[]>([
   { id: 1, command: '시스템 초기화 완료', timestamp: '14:20', type: 'output' },
-  { id: 2, command: '전투 준비 상태 확인', timestamp: '14:22', type: 'input' },
-  { id: 3, command: '전투 준비 완료 - 모든 시스템 정상', timestamp: '14:22', type: 'output' },
 ]);
 
-let commandIdCounter = 4;
+let commandIdCounter = 2;
+
+// Chat Command Composable 사용
+const { sendChatMessage, isSending } = useChatCommand();
 
 // 명령어 입력 처리
-const handleCommandSubmit = (command: string) => {
+const handleCommandSubmit = async (command: string) => { 
   const now = new Date();
   const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
   
@@ -32,15 +34,26 @@ const handleCommandSubmit = (command: string) => {
     type: 'input'
   });
 
-  // 시뮬레이션된 응답 추가 (실제로는 서버 응답)
-  setTimeout(() => {
+  // Backend로 전송
+  const result = await sendChatMessage(command);
+  
+  if (result) {
+    // Backend 응답 추가
     commandHistory.value.push({
       id: commandIdCounter++,
-      command: `명령어 "${command}" 처리 완료`,
+      command: result.message,
       timestamp,
-      type: 'output'
+      type: result.type === 'error' ? 'error' : 'output'
     });
-  }, 500);
+  } else {
+    // 에러 처리
+    commandHistory.value.push({
+      id: commandIdCounter++,
+      command: '서버 오류가 발생했습니다',
+      timestamp,
+      type: 'error'
+    });
+  }
 };
 </script>
 

@@ -7,8 +7,8 @@ export const usePositionStore = defineStore('position', () => {
   
   // 현재 위치 (WebSocket으로 업데이트예정)
   const current = ref<TankPosition>({
-    x: 150,
-    y: 150
+    x: 0,
+    y: 0
   })
 
   // 목표 위치 (사용자 입력 또는 지도 클릭으로 변경 예정)
