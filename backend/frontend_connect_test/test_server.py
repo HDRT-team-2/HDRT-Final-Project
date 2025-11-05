@@ -17,6 +17,7 @@ import time
 import threading
 from mock import generate_mock_detection, generate_mock_fire, set_target_position, set_position_update_callback
 from mock import set_detection_update_callback, set_detection_target, set_fire_update_callback
+from chat_handler import parse_chat_command
 
 # Flask 앱 생성
 app = Flask(__name__)
@@ -29,7 +30,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 sending_detection = False
 
 # ============================================
-# HTTP 엔드포인트
+# HTTP 엔드포인트 - Target Position
 # ============================================
 
 
@@ -54,6 +55,36 @@ def health_check():
     """서버 상태 확인"""
     return jsonify({"status": "ok", "message": "Mock server running"})
 
+# ============================================
+# HTTP 엔드포인트 - Chat 
+# ============================================
+
+@app.route('/api/chat', methods=['POST'])
+def handle_chat():
+    """
+    채팅 명령 처리
+    Frontend에서 자연어 명령 수신 → LLM 분석 → 응답
+    """
+    data = request.get_json()
+    user_message = data.get('message', '')
+    
+    print(f"[Chat] 수신: {user_message}")
+    
+    # LLM으로 명령 분석
+    result = parse_chat_command(user_message)
+    
+    print(f"[Chat] 응답: {result}")
+    
+    # command 타입이면 목표 위치도 설정
+    if result.get('type') == 'command':
+        x = result.get('x')
+        y = result.get('y')
+        if x is not None and y is not None:
+            set_target_position(x, y)
+            set_detection_target(x, y)
+            print(f"[Chat] 목표 위치 설정: ({x}, {y})")
+    
+    return jsonify(result)
 
 # ============================================
 # WebSocket - Detection (push 구조)
