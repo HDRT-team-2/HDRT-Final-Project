@@ -1,3 +1,16 @@
+"""
+시뮬레이터에서 추출한 주행 로그를 1단계 가공하는 코드
+
+credit by : oixxta
+
+300*300이며, 원본 주행로그에 대한 왜곡이 가장 적음.
+
+반드시, 시작하기 전에 원본 주행로그의 확장자만 txt에서 csv로 바꾸고,
+file_to_read_name에 주행 로그 원본파일의 이름을,
+input_csv_path에 주행 로그 원본파일의 경로를,
+out_path에 가공된 csv 파일이 저장될 경로를 지정할 것.
+"""
+
 import numpy as np
 import pandas as pd
 from pathlib import Path

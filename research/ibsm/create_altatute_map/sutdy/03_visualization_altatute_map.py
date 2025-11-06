@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.tri import Triangulation
 
-file_to_read_name = "00_forest_and_river_map_info_scan_log" + ".csv"
+file_to_read_name = "03_simple_flat_map_Info_scan_log" + ".csv"
 input_csv_path = "C:/Users/msi/OneDrive/바탕 화면/Jongseong KIM/final_project/HDRT-Final-Project/research/ibsm/create_altatute_map/sutdy/original_drive_log/" + file_to_read_name
 
 
