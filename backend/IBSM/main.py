@@ -1,5 +1,8 @@
+# IBSM(Integrated Battlefield Situation Management)
 from flask import Flask, request, jsonify
 import requests
+
+# --------------------------------------------------------------------
 
 # info, get_action | Tank Turret Rotation Control
 global_QE_command, global_QE_weight, global_RF_command, global_RF_weight = "", 0.0, "", 0.0
@@ -8,6 +11,10 @@ global_WS_command, global_WS_weight, global_AD_command, global_AD_weight = "", 0
 # info, get_action | Tank Fire Control
 global_fire_command = False
 
+# --------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------
 
 def send_fcs(request_data=None):
     external_server = "http://192.168.0.32:5000/get_fcs"
@@ -66,7 +73,12 @@ def info():
     global global_QE_command, global_QE_weight, global_RF_command, global_RF_weight
     global global_WS_command, global_WS_weight, global_AD_command, global_AD_weight
     global global_fire_command
-    
+
+    # Reset global commands and weights
+    global_QE_command, global_QE_weight, global_RF_command, global_RF_weight = 0.0, "", 0.0, ""
+    global_WS_command, global_WS_weight, global_AD_command, global_AD_weight = 0.0, "", 0.0, ""
+    global_fire_command = False
+
     request_data = request.get_json(force=True)
     if not request_data:
         return jsonify({"error": "No JSON received"}), 400
@@ -109,7 +121,7 @@ def info():
             [123, 132, 123]
         ]
     }
-    # send_vdrs(request_data_vdrs)
+    send_vdrs(request_data_vdrs)
 
     request_data_tpp = {
         "time" : time, # 시뮬레이터 시각
@@ -117,7 +129,8 @@ def info():
         "target_pos" : {"x": enemy_x, "y": enemy_y, "z": enemy_z}, # 목적지 X, Y, Z 좌표
         "map_info" : { "test": "test"} # IBSM 전장 상황 정보
     }
-    # send_tpp(request_data_tpp)
+
+    send_tpp(request_data_tpp)
 
     request_data_fcs = {
         "time" : time, # 시뮬레이터 시각
@@ -149,8 +162,6 @@ def info():
     global_WS_weight = adcs_data['WS_weight']
     global_AD_command = adcs_data['AD_command']
     global_AD_weight = adcs_data['AD_weight']
-    print("global_WS_command:", global_WS_command, "global_WS_weight:", global_WS_weight)
-    print("global_AD_command:", global_AD_command, "global_AD_weight:", global_AD_weight)
     return jsonify({"status": "success", "control": ""})
 
 @app.route('/get_action', methods=['POST'])

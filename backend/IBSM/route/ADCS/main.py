@@ -1,4 +1,4 @@
-# TPP(Tank Path Planning)
+# ADCS(Autonomous Driving Control System)
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
