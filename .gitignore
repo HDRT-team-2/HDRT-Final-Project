@@ -162,3 +162,11 @@ __pycache__/
 venv/
 env/
 .env
+
+# TCIS Research - Machine Learning Models (large files)
+research/TCIS/**/*.pkl
+research/TCIS/**/*.pt
+research/TCIS/**/*.pth
+research/TCIS/**/*.h5
+research/TCIS/**/*.model
+
