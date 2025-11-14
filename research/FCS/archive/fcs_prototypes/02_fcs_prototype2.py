@@ -1,6 +1,8 @@
 """
 FCS 모듈 Prototype2
 
+credit by : oixxta
+
 FCS와 IBSM과의 실시간 서버통신 구현 포함.
 
 지형 고도 + 포탄 탄도식을 이용해서, 지금 자세에서 적을 쏠 수 있는지 판단하고

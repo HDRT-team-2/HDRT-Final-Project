@@ -1,6 +1,8 @@
 """
 FCS 모듈 Prototype1
 
+credit by : oixxta
+
 FCS의 단순 알고리즘 구현
 
 IBSM으로부터 json으로 받아와야 하는 값들은 임시로 더미값.
