@@ -125,6 +125,8 @@ def fcs_function(payload: dict):
     my_alt = altitude_calculator(my_pos_x, my_pos_y)  #위 읽어온 csv altatude map을 기반으로 현재 고도를 판단
     G = 9.81 # 중력가속도
     muzzle_velocity = 61 # 포탄의 초기속도(61m/s)
+    
+    print(payload)  # IBSM에서 수신받은 값들 출력
 
     ### IBSM에게 보낼 값들을 담을 변수들 선언 및 기본값 지정
     qe_command = ""
@@ -270,6 +272,9 @@ def get_fcs():
 
     # 핵심 계산
     result = fcs_function(payload)
+
+    # IBSM 측에 FCS가 보낸 값들을 출력
+    print(result)
 
     # 호출자(IBSM)에게 결과 반환
     return jsonify(result)
