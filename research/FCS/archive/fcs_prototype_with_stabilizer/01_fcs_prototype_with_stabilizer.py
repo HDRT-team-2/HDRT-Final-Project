@@ -111,17 +111,17 @@ def angle_to_weight(angle_diff_deg, max_angle=30.0, min_weight=0.0, max_weight=1
 ##### FCS 주요 로직 #####
 def fcs_function(payload: dict):
     ### IBSM으로 부터 읽어온 값들을 계산에 쓰기 위한 변수로 저장(payload 누락에 대한 예외처리, 0 추가.)
-    maptype = int(payload.get("Map_type", 0))                   # 맵 타입
+    maptype = int(payload.get("may_type", 0))                   # 맵 타입
     check_maptype(maptype)
-    enemy_pos_x = float(payload.get("ibsm_target", {}).get("x", 0))    # 적 x좌표 (topview 기준)
-    enemy_pos_y = float(payload.get("ibsm_target", {}).get("y", 0))    # 적 y좌표 (topview 기준)
+    enemy_pos_x = float(payload.get("ibsm_target_pos", {}).get("x", 0))    # 적 x좌표 (topview 기준)
+    enemy_pos_y = float(payload.get("ibsm_target_pos", {}).get("y", 0))    # 적 y좌표 (topview 기준)
     my_pos_x = float(payload.get("ally_body_pos", {}).get("x", 0))     # 내 x좌표 (topview 기준)
     my_pos_y = float(payload.get("ally_body_pos", {}).get("y", 0))     # 내 y좌표 (topview 기준)
-    my_turret_x = float(payload.get("ally_turret_angle", {}).get("X", 0))    # 내 포탑 수평 기울기
-    my_turret_y = float(payload.get("ally_turret_angle", {}).get("Y", 0))    # 내 포탑 수직 기울기
-    my_chassis_x = float(payload.get("ally_body_angle", {}).get("X", 0))    # 내 차체 x 기울기
-    my_chassis_y = float(payload.get("ally_body_angle", {}).get("Y", 0))    # 내 차체 y 기울기
-    my_chassis_z = float(payload.get("ally_body_angle", {}).get("Z", 0))    # 내 차체 z 기울기
+    my_turret_x = float(payload.get("ally_turret_angle", {}).get("x", 0))    # 내 포탑 수평 기울기
+    my_turret_y = float(payload.get("ally_turret_angle", {}).get("y", 0))    # 내 포탑 수직 기울기
+    my_chassis_x = float(payload.get("ally_body_angle", {}).get("x", 0))    # 내 차체 x 기울기
+    my_chassis_y = float(payload.get("ally_body_angle", {}).get("y", 0))    # 내 차체 y 기울기
+    my_chassis_z = float(payload.get("ally_body_angle", {}).get("z", 0))    # 내 차체 z 기울기
     simulator_time = float(payload.get("time", 0))                     # IDMS 기준 시간
     my_speed = float(payload.get("ally_speed", 0))                     # 내 차체의 속도
     enemy_alt = altitude_calculator(enemy_pos_x, enemy_pos_y)   #위 읽어온 csv altatude map을 기반으로 현재 고도를 판단
@@ -137,8 +137,8 @@ def fcs_function(payload: dict):
     rf_command = ""
     rf_weight = 0
     fire_command = False
-    fire_target = [enemy_pos_x, enemy_pos_y, enemy_alt]
-    new_fire_point = None
+    fire_target_pos = None
+    new_fire_point_pos = None
 
     ### 계산 1. 수평거리 및 고저차 계산
     dx = enemy_pos_x - my_pos_x
@@ -224,7 +224,7 @@ def fcs_function(payload: dict):
         move_x, move_y = get_move_position(my_pos_x, my_pos_y, enemy_pos_x, enemy_pos_y, required_distance) # 새로 가야할 x좌표, y좌표를 반환하는 계산기에 넣음
         print(f"적 전차를 맞추려면 다음 위치까지 접근하세요:")
         print(f"이동 좌표: x={move_x:.2f}, y={move_y:.2f}")
-        new_fire_point = [move_x, move_y, altitude_calculator(move_x, move_y)]  # 새로 가야할 곳의 x, y, z 좌표
+        new_fire_point_pos = {move_x, move_y, altitude_calculator(move_x, move_y)} # 새로 가야할 곳의 x, y, z 좌표
 
         # 이동 후 수평거리 및 고저차 재계산
         dx_new = enemy_pos_x - move_x
@@ -260,9 +260,9 @@ def fcs_function(payload: dict):
         "QE_weight" : qe_weight,            # 포탑 좌 / 우 회전 세기, float형
         "RF_command" : rf_command,          # 포신 상 / 하 방향 제어, string형, 'R' 혹은 'F'
         "RF_weight" : rf_weight,            # 포신 상 / 하 세기, float형
-        "Fire_command" : fire_command,      # 사격 여부, bool형, True or False
-        "Fire_target" : fire_target,        # 사격 대상, list형, [x, y, z]
-        "new_fire_point" : new_fire_point   # 현 위치 즉시 사격 불가 시 사격 가능 지점, list형, [x, y, z]
+        "fire_command" : fire_command,      # 사격 여부, bool형, True or False
+        "fire_target_pos" : fire_target_pos,        # 사격 대상, dict형, {"x": 15.0, "y": 25.0, "z": 0.0}
+        "new_fire_point_pos" : new_fire_point_pos   # 현 위치 즉시 사격 불가 시 사격 가능 지점, dict형, {"x": 15.0, "y": 25.0, "z": 0.0}
     }
 
     return result
