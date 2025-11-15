@@ -224,7 +224,7 @@ def fcs_function(payload: dict):
         move_x, move_y = get_move_position(my_pos_x, my_pos_y, enemy_pos_x, enemy_pos_y, required_distance) # 새로 가야할 x좌표, y좌표를 반환하는 계산기에 넣음
         print(f"적 전차를 맞추려면 다음 위치까지 접근하세요:")
         print(f"이동 좌표: x={move_x:.2f}, y={move_y:.2f}")
-        new_fire_point_pos = {move_x, move_y, altitude_calculator(move_x, move_y)} # 새로 가야할 곳의 x, y, z 좌표
+        new_fire_point_pos = {"x": move_x, "y": move_y, "z": altitude_calculator(move_x, move_y)} # 새로 가야할 곳의 x, y, z 좌표
 
         # 이동 후 수평거리 및 고저차 재계산
         dx_new = enemy_pos_x - move_x
