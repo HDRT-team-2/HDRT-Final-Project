@@ -20,8 +20,8 @@ interface Props {
 const props = defineProps<Props>()
 
 // SVG 캔버스 크기 (픽셀)
-const canvasWidth = 740  // px
-const canvasHeight = 740 // px
+const canvasWidth = 900  // px
+const canvasHeight = 900 // px
 
 // 좌표계 범위
 const coordWidth = 300   // 0~300

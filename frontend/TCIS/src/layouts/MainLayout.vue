@@ -6,20 +6,21 @@ import SideBar from '@/layouts/SideBar.vue';
 const leftSideBar = {
     contents: [
         'StatusReport',
-        'SituationLog'
+        'Positions',
+        'CommandPanel'
+        
     ],
-    col: [3, 7]  // 30% : 70% 비율
+    col: [1, 1, 8]
 }
 
 // 우측 사이드바 설정  
 const rightSideBar = {
     contents: [
-        'PositionInfo',
-        'TargetInput', 
         'DetectedObjects',
+        'SituationLog',
         'FireSchedule',
     ],
-    col: [1, 1, 5, 3]  // 20% : 10% : 50% : 20% 비율
+    col: [1, 5, 3]
 }
 
 // 전체 레이아웃 비율 설정
