@@ -46,7 +46,7 @@ watch(() => props.history.length, () => {
 <template>
   <div 
     ref="historyContainer"
-    class="h-full overflow-y-auto px-3 py-2 space-y-1"
+    class="h-full overflow-y-auto py-2 space-y-1"
   >
     <div 
       v-for="entry in history"

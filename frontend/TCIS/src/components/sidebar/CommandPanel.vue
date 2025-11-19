@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import Card from '@/components/common/Card.vue'
 import CommandHeader from '@/components/commandPanel/CommandHeader.vue';
 import CommandHistory from '@/components/commandPanel/CommandHistory.vue';
 import CommandInput from '@/components/commandPanel/CommandInput.vue';
@@ -58,24 +59,23 @@ const handleCommandSubmit = async (command: string) => {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-[160px] bg-gray-900 text-white">
-    <!-- 헤더 -->
-    <CommandHeader title="명령어 콘솔" />
-
-    <!-- 좌우 레이아웃: 히스토리 + 입력창 -->
-    <div class="flex flex-1 min-h-0">
-      <!-- 명령어 히스토리 (좌측, 넓은 영역) -->
-      <div class="flex-1 min-w-0">
-        <CommandHistory :history="commandHistory" />
-      </div>
-      
-      <!-- 입력 영역 (우측, 좁은 영역) -->
-      <div class="w-96 border-l border-gray-700">
-        <CommandInput 
-          :history-count="commandHistory.length"
-          @submit="handleCommandSubmit"
-        />
+  <Card title="지휘 보조 시스템">
+    <div class="flex flex-col min-h-[160px]">
+      <div >
+        <!-- 명령어 히스토리 (좌측, 넓은 영역) -->
+        <div class="flex-1 min-w-0">
+          <CommandHistory :history="commandHistory" />
+        </div>
+        
+        <!-- 입력 영역 (우측, 좁은 영역) -->
+        <div>
+          <CommandInput 
+            :history-count="commandHistory.length"
+            @submit="handleCommandSubmit"
+          />
+        </div>
       </div>
     </div>
-  </div>
+  </Card>
+  
 </template>
