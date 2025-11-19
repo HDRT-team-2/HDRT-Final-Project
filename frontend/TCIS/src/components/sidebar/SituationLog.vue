@@ -13,7 +13,7 @@ const { events } = storeToRefs(situationStore);
 </script>
 
 <template>
-  <Card title="상황인지 결과">
+  <Card title="전장 인식 결과">
     <div class="h-full flex flex-col">
       <div class="flex-1 overflow-y-auto">
         <TransitionGroup

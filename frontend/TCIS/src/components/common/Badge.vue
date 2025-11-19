@@ -1,7 +1,7 @@
 <script setup lang="ts">
 interface Props {
   text: string
-  color?: 'blue' | 'yellow' | 'red' | 'green' | 'gray'
+  color?: 'rotem' | 'yellow' | 'danger' | 'success' | 'gray'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -9,10 +9,10 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const colorClasses = {
-  blue: 'bg-rotem-500',
+  rotem: 'bg-rotem-500',
   yellow: 'bg-warning-700',
-  red: 'bg-danger-500',
-  green: 'bg-success-500',
+  danger: 'bg-danger-500',
+  success: 'bg-success-500',
   gray: 'bg-gray-500'
 }
 </script>
