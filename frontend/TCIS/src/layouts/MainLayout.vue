@@ -40,9 +40,9 @@ const getFlexStyle = (ratio: number) => ({
 
 </script>
 <template>
-    <div class="flex">
+    <div class="flex h-full">
         <!-- 좌측 사이드바 -->
-        <div :style="getFlexStyle(layoutConfig.leftSidebar)" class="bg-white">
+        <div :style="getFlexStyle(layoutConfig.leftSidebar)" class="bg-white min-h-0">
             <SideBar 
                 class="h-full" 
                 :contents="leftSideBar.contents" 
@@ -51,12 +51,12 @@ const getFlexStyle = (ratio: number) => ({
         </div>
         
         <!-- 맵 영역 -->
-        <div :style="getFlexStyle(layoutConfig.map)">
+        <div :style="getFlexStyle(layoutConfig.map)" class="min-h-0">
             <BattlefieldMap class="h-full" />
         </div>
         
         <!-- 우측 사이드바 -->
-        <div :style="getFlexStyle(layoutConfig.rightSidebar)" class="bg-white">
+        <div :style="getFlexStyle(layoutConfig.rightSidebar)" class="bg-white min-h-0">
             <SideBar 
                 class="h-full" 
                 :contents="rightSideBar.contents" 
