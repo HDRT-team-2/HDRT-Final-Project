@@ -60,22 +60,19 @@ const handleCommandSubmit = async (command: string) => {
 
 <template>
   <Card title="지휘 보조 시스템">
-    <div class="flex flex-col min-h-[160px]">
-      <div >
-        <!-- 명령어 히스토리 (좌측, 넓은 영역) -->
-        <div class="flex-1 min-w-0">
+    <div class="flex flex-col h-full overflow-hidden">
+        <!-- 명령어 히스토리 -->
+        <div class="flex-1 overflow-auto min-h-0">
           <CommandHistory :history="commandHistory" />
         </div>
         
-        <!-- 입력 영역 (우측, 좁은 영역) -->
-        <div>
+        <!-- 입력 영역 -->
+        <div class="flex-shrink-0">
           <CommandInput 
             :history-count="commandHistory.length"
             @submit="handleCommandSubmit"
           />
         </div>
       </div>
-    </div>
   </Card>
-  
 </template>
