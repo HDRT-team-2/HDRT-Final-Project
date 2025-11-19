@@ -33,7 +33,7 @@ watch(objects, (newObjects) => {
 
 </script>
 <template>
-  <div class="">
+  <div class="w-full h-full flex items-center justify-center p-2">
     <MapCanvas
       :current="current"
       :target="target"

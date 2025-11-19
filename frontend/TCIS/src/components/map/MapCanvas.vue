@@ -44,10 +44,9 @@ function coordToSvg(x: number, y: number) {
 
 <template>
   <svg 
-    :width="canvasWidth" 
-    :height="canvasHeight"
-    class="border-2 border-gray-400"
+    class="w-full h-full"
     :viewBox="`0 0 ${canvasWidth} ${canvasHeight}`"
+    preserveAspectRatio="xMidYMid meet"
   >
     <!-- 배경 이미지 -->
     <defs>

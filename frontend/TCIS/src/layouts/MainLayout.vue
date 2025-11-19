@@ -51,7 +51,7 @@ const getFlexStyle = (ratio: number) => ({
         </div>
         
         <!-- 맵 영역 -->
-        <div :style="getFlexStyle(layoutConfig.map)" class="bg-gray-200">
+        <div :style="getFlexStyle(layoutConfig.map)">
             <BattlefieldMap class="h-full" />
         </div>
         
