@@ -22,7 +22,7 @@ def send_fcs(request_data=None):
     return ext_result
 
 def send_adcs(request_data=None):
-    external_server = "http://192.168.0.124:5000/get_adcs"
+    external_server = "http://127.0.0.1:5002/get_adcs"
     try:
         ext_response = requests.post(external_server, json=request_data, timeout=2)
         ext_result = ext_response.json()
@@ -34,7 +34,7 @@ def send_adcs(request_data=None):
     return ext_result
 
 def send_vdrs(request_data=None):
-    external_server = "http://192.168.0.15:5000/get_vdrs"
+    external_server = "http://127.0.0.1:5003/get_vdrs"
     try:
         ext_response = requests.post(external_server, json=request_data, timeout=2)
         ext_result = ext_response.json()
@@ -46,7 +46,7 @@ def send_vdrs(request_data=None):
     return ext_result
 
 def send_tpp(request_data=None):
-    external_server = "http://192.168.0.132:5000/get_tpp"
+    external_server = "http://127.0.0.1:5004/get_tpp"
     try:
         ext_response = requests.post(external_server, json=request_data, timeout=2)
         ext_result = ext_response.json()
