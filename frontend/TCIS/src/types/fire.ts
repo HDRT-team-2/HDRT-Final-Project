@@ -5,7 +5,7 @@ export type FireResult = 'hit' | 'miss'
 export interface FireEvent {
   id: string // 고유 ID (프론트에서 생성)
   ally_id: string // 발포한 아군 탱크 ID
-  target_tracking_id: number // 발포 대상 tracking_id
+  target_tracking_id: string | number // 발포 대상 tracking_id
   target_class_name?: string // 대상 객체 클래스
   firedAt: Date // 발포 시간
   result?: FireResult // 사격 결과

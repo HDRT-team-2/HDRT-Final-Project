@@ -46,13 +46,19 @@ const getAlignClass = (align?: string) => {
   <div class="h-full overflow-auto" :style="maxHeight ? { maxHeight } : {}">
     <table class="w-full" :class="getSizeClass()">
       <!-- Header -->
-      <thead class="rounded-lg bg-rotem-100 sticky top-0 z-10">
-        <tr class="rounded-lg">
+      <thead class="sticky top-0 z-10">
+        <tr class="bg-rotem-100 rounded-lg">
           <th
-            v-for="column in columns"
+            v-for="(column, idx) in columns"
             :key="column.key"
             class="py-1 text-xs font-bold"
-            :class="getAlignClass(column.align)"
+            :class="[
+              getAlignClass(column.align),
+              {
+                'rounded-l-lg': idx === 0,
+                'rounded-r-lg': idx === columns.length - 1
+              }
+            ]"
             :style="column.width ? { width: column.width } : {}"
           >
             {{ column.label }}
