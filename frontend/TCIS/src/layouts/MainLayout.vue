@@ -20,7 +20,7 @@ const rightSideBar = {
         'SituationLog',
         'FireSchedule',
     ],
-    col: [1, 5, 3]
+    col: [2, 6, 4]
 }
 
 // 전체 레이아웃 비율 설정

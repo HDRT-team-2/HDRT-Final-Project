@@ -6,43 +6,64 @@ import { useDetectionStore } from '@/stores/detection'
 import { computed } from 'vue'
 
 const detectionStore = useDetectionStore()
-const { tankCount, mineCount, enemyCount, civilianCount, personCount, vehicleCount } = storeToRefs(detectionStore)
+const { 
+  enemyCount, enemyTankCount, enemyInfantryCount,
+  allyCount, allyTankCount, allyInfantryCount,
+  otherCount, vehicleCount, rockCount
+} = storeToRefs(detectionStore)
 
-const tankItems = computed(() => [
-  { label: '전차', count: tankCount.value },
-  { label: '보병', count: personCount.value },
-  { label: '지뢰', count: mineCount.value }
+const enemyItems = computed(() => [
+  { label: '전차', count: enemyTankCount.value },
+  { label: '보병', count: enemyInfantryCount.value }
 ])
 
-const civilianItems = computed(() => [
-  { label: '차량', count: vehicleCount.value }
+const allyItems = computed(() => [
+  { label: '전차', count: allyTankCount.value },
+  { label: '보병', count: allyInfantryCount.value }
+])
+
+const otherItems = computed(() => [
+  { label: '차량', count: vehicleCount.value },
+  { label: '바위', count: rockCount.value }
 ])
 </script>
 
 <template>
   <Card title="탐지 객체">
-    <div class="text-sm flex gap-3">
-      <!-- 적 전차 -->
+    <div class="text-sm flex gap-3 h-full">
+      <!-- 적 -->
       <ObjectsList
         title="적"
         :count="enemyCount"
-        bg-color="bg-red-50"
-        border-color="border-red-200"
-        text-color="text-red-700"
-        count-color="text-red-600"
-        :items="tankItems"
+        bg-color="bg-danger-50"
+        border-color="border-danger-600"
+        text-color="text-danger-500"
+        count-color="text-danger-500"
+        :items="enemyItems"
         class="flex-1"
       />
       
-      <!-- 민간 -->
+      <!-- 아군 -->
       <ObjectsList
-        title="민간"
-        :count="civilianCount"
-        bg-color="bg-blue-50"
-        border-color="border-blue-200"
-        text-color="text-blue-700"
-        count-color="text-blue-600"
-        :items="civilianItems"
+        title="아군"
+        :count="allyCount"
+        bg-color="bg-rotem-50"
+        border-color="border-rotem-600"
+        text-color="text-rotem-500"
+        count-color="text-rotem-500"
+        :items="allyItems"
+        class="flex-1"
+      />
+      
+      <!-- 기타 -->
+      <ObjectsList
+        title="기타"
+        :count="otherCount"
+        bg-color="bg-success-50"
+        border-color="border-success-700"
+        text-color="text-success-600"
+        count-color="text-success-600"
+        :items="otherItems"
         class="flex-1"
       />
     </div>

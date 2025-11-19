@@ -33,33 +33,44 @@ export const useDetectionStore = defineStore('detection', () => {
     return counts
   })
 
-  // 적 탱크 수
-  const tankCount = computed(() => 
-    classCounts.value.tank
-  )
+  // 적 전차 수
+  const enemyTankCount = computed(() => classCounts.value.tank)
   
   // 적 보병 수
-  const personCount = computed(() => classCounts.value.human)
-
-  // 지뢰 수
-  const mineCount = computed(() => classCounts.value.mine)
-
+  const enemyInfantryCount = computed(() => classCounts.value.human)
+  
   // 총 적 객체 수
   const enemyCount = computed(() => 
-    tankCount.value + 
-    mineCount.value + 
-    personCount.value
+    enemyTankCount.value + 
+    enemyInfantryCount.value
   )
 
-  // 민간객체 총 수
-  const civilianCount = computed(() => 
-    classCounts.value.car + 
-    classCounts.value.truck
+  // 아군 전차 수 (임의 설정: 아직 클래스 없음)
+  const allyTankCount = computed(() => 0)
+  
+  // 아군 보병 수 (임의 설정: 아직 클래스 없음)
+  const allyInfantryCount = computed(() => 0)
+  
+  // 총 아군 객체 수
+  const allyCount = computed(() => 
+    allyTankCount.value + 
+    allyInfantryCount.value
   )
 
-  // 민간 차량 수 (car + truck)
+  // 기타 - 차량 (car + truck)
   const vehicleCount = computed(() =>
     classCounts.value.car + classCounts.value.truck
+  )
+  
+  // 기타 - 바위 (rock_small + rock_large)
+  const rockCount = computed(() =>
+    classCounts.value.rock_small + classCounts.value.rock_large
+  )
+  
+  // 총 기타 객체 수
+  const otherCount = computed(() => 
+    vehicleCount.value + 
+    rockCount.value
   )
 
   // 객체 탐지 수
@@ -145,12 +156,15 @@ export const useDetectionStore = defineStore('detection', () => {
     
     // Computed
     classCounts,
-    tankCount,
-    mineCount,
+    enemyTankCount,
+    enemyInfantryCount,
     enemyCount,
-    civilianCount,
-    personCount,
+    allyTankCount,
+    allyInfantryCount,
+    allyCount,
     vehicleCount,
+    rockCount,
+    otherCount,
     totalCount,
     
     // Actions
