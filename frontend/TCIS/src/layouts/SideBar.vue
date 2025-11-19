@@ -47,7 +47,7 @@ const getFlexStyle = (ratio: number) => {
             v-for="(componentName, index) in contents"
             :key="componentName"
             :style="getFlexStyle(col[index])"
-            class="flex-item"
+            class="flex-item min-h-0"
         >
             <component
                 :is="getComponent(componentName)"
