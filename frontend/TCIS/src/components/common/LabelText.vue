@@ -18,11 +18,11 @@ const formattedValue = computed(() => {
 </script>
 
 <template>
-  <div class="flex items-center gap-2">
+  <div class="flex items-center gap-1">
     <label class="text-sm font-medium text-gray-700 w-4">
       {{ label }}:
     </label>
-    <div class="w-12 text-center text-sm font-mono py-1 text-gray-800 font-semibold">
+    <div class="w-[4rem] text-center text-sm font-mono py-1 text-gray-800 font-semibold">
       {{ formattedValue }}
     </div>
   </div>
