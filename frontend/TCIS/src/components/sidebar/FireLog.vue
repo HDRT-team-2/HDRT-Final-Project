@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Card from '@/components/common/Card.vue'
-import FireScheduleTable from '@/components/sidebar/FireScheduleTable.vue'
+import FireLogTable from '@/components/sidebar/FireLogTable.vue'
 import { storeToRefs } from 'pinia'
 import { useFireStore } from '@/stores/fire'
 import { computed } from 'vue'
@@ -20,7 +20,7 @@ const schedules = computed(() => {
 </script>
 
 <template>
-  <Card title="타격 스케줄링">
-    <FireScheduleTable :schedules="schedules" />
+  <Card title="사격 이력">
+    <FireLogTable :schedules="schedules" />
   </Card>
 </template>

@@ -18,7 +18,7 @@ const rightSideBar = {
     contents: [
         'DetectedObjects',
         'SituationLog',
-        'FireSchedule',
+        'FireLog',
     ],
     col: [2, 6, 4]
 }

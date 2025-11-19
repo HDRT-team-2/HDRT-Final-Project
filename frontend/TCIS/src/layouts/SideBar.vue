@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import DetectedObjects from '@/components/sidebar/DetectedObjects.vue';
-import FireSchedule from '@/components/sidebar/FireSchedule.vue';
+import FireLog from '@/components/sidebar/FireLog.vue';
 import SituationLog from '@/components/sidebar/SituationLog.vue';
 import StatusReport from '@/components/sidebar/StatusReport.vue';
 import CommandPanel from '@/components/sidebar/CommandPanel.vue';
@@ -14,7 +14,7 @@ const componentMap = {
   'SituationLog': () => import('@/components/sidebar/SituationLog.vue'),
   'Positions': () => import('@/components/sidebar/Positions.vue'),
   'DetectedObjects': () => import('@/components/sidebar/DetectedObjects.vue'),
-  'FireSchedule': () => import('@/components/sidebar/FireSchedule.vue'),
+  'FireLog': () => import('@/components/sidebar/FireLog.vue'),
   'CommandPanel': () => import('@/components/sidebar/CommandPanel.vue'),
 };
 
