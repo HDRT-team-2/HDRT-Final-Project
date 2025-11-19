@@ -3,7 +3,7 @@ import Card from '@/components/common/Card.vue';
 import SituationLogItem from '@/components/common/SituationLogItem.vue';
 import { ref, computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useSituationStore } from '@/stores/situation';
+import { useSituationStore } from '@/stores/situation-store';
 
 // Situation Store 연결
 const situationStore = useSituationStore();

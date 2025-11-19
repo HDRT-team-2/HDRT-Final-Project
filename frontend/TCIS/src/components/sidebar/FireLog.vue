@@ -2,7 +2,7 @@
 import Card from '@/components/common/Card.vue'
 import FireLogTable from '@/components/sidebar/FireLogTable.vue'
 import { storeToRefs } from 'pinia'
-import { useFireStore } from '@/stores/fire'
+import { useFireStore } from '@/stores/fire-store'
 import { computed } from 'vue'
 
 // Fire Store 연결

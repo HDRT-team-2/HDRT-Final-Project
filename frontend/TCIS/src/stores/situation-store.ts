@@ -1,7 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { useDetectionStore } from './detection'
-import { useFireStore } from './fire'
+import { useDetectionStore } from './detection-store'
+import { useFireStore } from './fire-store'
 import type { SituationEvent } from '@/types/situation'
 import { CLASS_NAME_KR } from '@/types/detection'
 

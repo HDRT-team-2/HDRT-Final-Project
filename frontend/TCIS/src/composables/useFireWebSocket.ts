@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useFireStore } from '@/stores/fire'
+import { useFireStore } from '@/stores/fire-store'
 import { SocketIOService } from '@/services/socketio_service'
 import type { FireResponse} from '@/types/fire'
 

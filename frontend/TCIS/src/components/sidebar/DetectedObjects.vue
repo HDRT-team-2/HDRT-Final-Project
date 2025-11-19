@@ -2,7 +2,7 @@
 import Card from '@/components/common/Card.vue'
 import ObjectsList from '@/components/common/ObjectsList.vue'
 import { storeToRefs } from 'pinia'
-import { useDetectionStore } from '@/stores/detection'
+import { useDetectionStore } from '@/stores/detection-store'
 import { computed } from 'vue'
 
 const detectionStore = useDetectionStore()

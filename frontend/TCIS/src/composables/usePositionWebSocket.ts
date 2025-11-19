@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { usePositionStore } from '@/stores/position'
+import { usePositionStore } from '@/stores/position-store'
 import { SocketIOService } from '@/services/socketio_service'
 import type { TankPosition } from '@/types/position'
 

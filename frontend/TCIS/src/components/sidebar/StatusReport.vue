@@ -2,7 +2,7 @@
 import Card from '@/components/common/Card.vue'
 import Badge from '@/components/common/Badge.vue'
 import { storeToRefs } from 'pinia'
-import { useStatusReportStore } from '@/stores/status'
+import { useStatusReportStore } from '@/stores/status-store'
 import { computed } from 'vue'
 
 // Store 연결

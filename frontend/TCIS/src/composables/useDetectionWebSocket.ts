@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useDetectionStore } from '@/stores/detection'
+import { useDetectionStore } from '@/stores/detection-store'
 import { SocketIOService } from '@/services/socketio_service'
 import type { DetectionResponse } from '@/types/detection'
 

@@ -5,7 +5,7 @@ import { ref, computed } from 'vue';
 
 // Pinia
 import { storeToRefs } from 'pinia'
-import { usePositionStore } from '@/stores/position'
+import { usePositionStore } from '@/stores/position-store'
 
 // Store 연결
 const positionStore = usePositionStore()
