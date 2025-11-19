@@ -1,7 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { useDetectionStore } from './detection'
-import { useFireStore } from './fire'
+import { useDetectionStore } from './detection-store'
+import { useFireStore } from './fire-store'
 import type { SituationEvent } from '@/types/situation'
 import { CLASS_NAME_KR } from '@/types/detection'
 
@@ -27,6 +27,11 @@ export const useSituationStore = defineStore('situation', () => {
   
   // 이벤트 추가 (맨 앞에)
   function addEvent(event: SituationEvent) {
+    // time이 없으면 자동 생성
+    if (!event.time) {
+      event.time = new Date()
+    }
+    
     events.value.unshift(event)
     
     // 최대 개수 초과 시 오래된 이벤트 제거
@@ -34,7 +39,7 @@ export const useSituationStore = defineStore('situation', () => {
       events.value = events.value.slice(0, maxEvents.value)
     }
     
-    console.log(`상황 로그: ${event.message}`)
+    console.log(`상황 로그 추가: ${event.type} [ID: ${event.id}]`)
   }
   
   // 최대 이벤트 개수 설정
@@ -60,12 +65,14 @@ export const useSituationStore = defineStore('situation', () => {
         
         // 새 탐지 이벤트 추가
         addEvent({
-          id: `detection-${obj.tracking_id}`,
+          id: obj.tracking_id.toString(),
           type: 'detection',
-          time: obj.detectedAt,
-          tracking_id: obj.tracking_id,
           className: obj.class_name,
-          message: `${CLASS_NAME_KR[obj.class_name]} 탐지 [ID: ${obj.tracking_id}]`
+          pos: {
+            x: obj.position.x,
+            y: obj.position.y
+          },
+          time: obj.detectedAt
         })
         
         addedDetectionIds.value.add(obj.tracking_id)
@@ -82,12 +89,20 @@ export const useSituationStore = defineStore('situation', () => {
         // 발포 이벤트
         const fireEventId = `fire-${fire.id}`
         if (!addedFireIds.value.has(fireEventId)) {
+          // 발포 대상 객체 찾기
+          const targetObj = detectionStore.objects.find(
+            obj => obj.tracking_id === fire.target_tracking_id
+          )
+          
           addEvent({
             id: fireEventId,
             type: 'fire',
-            time: fire.firedAt,
-            tracking_id: fire.target_tracking_id,
-            message: `발포 [대상: ${fire.target_tracking_id}]`
+            className: targetObj?.class_name, // 대상 객체 클래스
+            pos: targetObj ? {
+              x: targetObj.position.x,
+              y: targetObj.position.y
+            } : undefined,
+            time: fire.firedAt
           })
           addedFireIds.value.add(fireEventId)
         }

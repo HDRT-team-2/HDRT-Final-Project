@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppHeader from '@/layouts/AppHeader.vue';
 import MainLayout from '@/layouts/MainLayout.vue';
-import CommandPanel from '@/layouts/CommandPanel.vue';
+import CommandPanel from '@/components/sidebar/CommandPanel.vue';
 
 </script>
 
@@ -12,8 +12,5 @@ import CommandPanel from '@/layouts/CommandPanel.vue';
         
         <!-- 메인 레이아웃: 나머지 모든 공간 차지 -->
         <MainLayout class="flex-1 min-h-0" />
-        
-        <!-- 명령 패널: 고정 높이 -->
-        <CommandPanel class="h-40 flex-shrink-0" />
     </div>
 </template>

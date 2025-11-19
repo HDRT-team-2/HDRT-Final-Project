@@ -6,20 +6,21 @@ import SideBar from '@/layouts/SideBar.vue';
 const leftSideBar = {
     contents: [
         'StatusReport',
-        'SituationLog'
+        'Positions',
+        'CommandPanel'
+        
     ],
-    col: [3, 7]  // 30% : 70% 비율
+    col: [1, 1, 8]
 }
 
 // 우측 사이드바 설정  
 const rightSideBar = {
     contents: [
-        'PositionInfo',
-        'TargetInput', 
         'DetectedObjects',
-        'FireSchedule',
+        'SituationLog',
+        'FireLog',
     ],
-    col: [1, 1, 5, 3]  // 20% : 10% : 50% : 20% 비율
+    col: [2, 6, 4]
 }
 
 // 전체 레이아웃 비율 설정
@@ -50,7 +51,7 @@ const getFlexStyle = (ratio: number) => ({
         </div>
         
         <!-- 맵 영역 -->
-        <div :style="getFlexStyle(layoutConfig.map)" class="bg-gray-200">
+        <div :style="getFlexStyle(layoutConfig.map)">
             <BattlefieldMap class="h-full" />
         </div>
         

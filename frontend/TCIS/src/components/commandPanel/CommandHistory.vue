@@ -45,25 +45,20 @@ watch(() => props.history.length, () => {
 
 <template>
   <div 
-    ref="historyContainer"
-    class="h-full overflow-y-auto px-3 py-2 space-y-1"
+    v-for="entry in history"
+    :key="entry.id"
+    class="rounded px-2 py-1 text-xs font-mono"
+    :class="getCommandStyle(entry.type)"
   >
-    <div 
-      v-for="entry in history"
-      :key="entry.id"
-      class="rounded px-2 py-1 text-xs font-mono"
-      :class="getCommandStyle(entry.type)"
-    >
-      <div class="flex flex-row items-start gap-2">
-        <span class="font-semibold mr-1 self-start min-w-[16px] text-center">
-          {{ entry.type === 'input' ? '>' : entry.type === 'error' ? '!' : '<' }}
-        </span>
-        <div class="flex-1 min-w-0">
-          <div class="flex justify-between items-baseline mb-1">
-            <span class="text-xs opacity-75">{{ entry.timestamp }}</span>
-          </div>
-          <div class="leading-relaxed break-words">{{ entry.command }}</div>
+    <div class="flex flex-row items-start gap-2">
+      <span class="font-semibold mr-1 self-start min-w-[16px] text-center">
+        {{ entry.type === 'input' ? '>' : entry.type === 'error' ? '!' : '<' }}
+      </span>
+      <div class="flex-1 min-w-0">
+        <div class="flex justify-between items-baseline mb-1">
+          <span class="text-xs opacity-75">{{ entry.timestamp }}</span>
         </div>
+        <div class="leading-relaxed break-words">{{ entry.command }}</div>
       </div>
     </div>
   </div>

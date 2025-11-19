@@ -5,7 +5,7 @@ import { ref, watch } from 'vue'
 
 // pinia
 import { storeToRefs } from 'pinia'
-import { usePositionStore } from '@/stores/position'
+import { usePositionStore } from '@/stores/position-store'
 
 // Store 연결
 const positionStore = usePositionStore()
@@ -23,8 +23,8 @@ watch(target, (newTarget) => {
   isUpdatingFromStore = true
   
   if (newTarget && typeof newTarget.x === 'number' && typeof newTarget.y === 'number') {
-    xPosition.value = newTarget.x.toString()
-    yPosition.value = newTarget.y.toString()
+    xPosition.value = newTarget.x.toFixed(3)
+    yPosition.value = newTarget.y.toFixed(3)
   } else {
     xPosition.value = ''
     yPosition.value = ''
@@ -36,36 +36,48 @@ watch(target, (newTarget) => {
   }, 0)
 }, { immediate: true })
 
-// input 값이 변경되면 store의 target 값도 업데이트
-watch([xPosition, yPosition], ([newX, newY]) => {
-  // Store에서 업데이트 중이면 무시
+// focus가 벗어났을 때 store 업데이트
+const handleBlur = () => {
   if (isUpdatingFromStore) return
   
-  if (newX !== '' && newY !== '') {
-    const x = parseInt(newX)
-    const y = parseInt(newY)
+  if (xPosition.value !== '' && yPosition.value !== '') {
+    let x = parseFloat(xPosition.value)
+    let y = parseFloat(yPosition.value)
+    
+    // 300 초과 시 300으로 제한
+    if (x > 300) {
+      x = 300
+      xPosition.value = '300.000'
+    }
+    if (y > 300) {
+      y = 300
+      yPosition.value = '300.000'
+    }
+    
     if (!isNaN(x) && !isNaN(y)) {
       positionStore.setTarget(x, y)
     }
   }
-})
+}
 </script>
 
 <template>
   <Card title="목표 위치">
-    <div class="flex items-center justify-center gap-4">
+    <div class="flex items-center justify-center gap-2">
       <InputNumber 
         v-model="xPosition"
         label="X"
-        :maxlength="3"
-        placeholder="000"
+        :maxlength="7"
+        placeholder="000.000"
+        @blur="handleBlur"
       />
       
       <InputNumber 
         v-model="yPosition"
         label="Y" 
-        :maxlength="3"
-        placeholder="000"
+        :maxlength="7"
+        placeholder="000.000"
+        @blur="handleBlur"
       />
     </div>
   </Card>

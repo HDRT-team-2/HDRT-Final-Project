@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import DetectedObjects from '@/components/sidebar/DetectedObjects.vue';
-import FireSchedule from '@/components/sidebar/FireSchedule.vue';
-import PositionInfo from '@/components/sidebar/PositionInfo.vue';
+import FireLog from '@/components/sidebar/FireLog.vue';
 import SituationLog from '@/components/sidebar/SituationLog.vue';
 import StatusReport from '@/components/sidebar/StatusReport.vue';
-import TargetInput from '@/components/sidebar/TargetInput.vue';
-
+import CommandPanel from '@/components/sidebar/CommandPanel.vue';
+import Positions from '@/components/sidebar/Positions.vue';
 import { defineAsyncComponent } from 'vue';
 
 // 동적 컴포넌트 맵핑
@@ -13,10 +12,10 @@ const componentMap = {
   // Sidebar Components
   'StatusReport': () => import('@/components/sidebar/StatusReport.vue'),
   'SituationLog': () => import('@/components/sidebar/SituationLog.vue'),
-  'PositionInfo': () => import('@/components/sidebar/PositionInfo.vue'),
-  'TargetInput': () => import('@/components/sidebar/TargetInput.vue'),
+  'Positions': () => import('@/components/sidebar/Positions.vue'),
   'DetectedObjects': () => import('@/components/sidebar/DetectedObjects.vue'),
-  'FireSchedule': () => import('@/components/sidebar/FireSchedule.vue'),
+  'FireLog': () => import('@/components/sidebar/FireLog.vue'),
+  'CommandPanel': () => import('@/components/sidebar/CommandPanel.vue'),
 };
 
 // Props 정의

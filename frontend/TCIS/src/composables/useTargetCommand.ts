@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { usePositionStore } from '@/stores/position'
+import { usePositionStore } from '@/stores/position-store'
 import { ApiService } from '@/services/api_service'
 
 // 목표 위치를 백엔드로 전송하고 이동 시작

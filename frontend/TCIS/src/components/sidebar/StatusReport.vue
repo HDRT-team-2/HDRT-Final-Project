@@ -1,30 +1,43 @@
 <script setup lang="ts">
-import Card from '@/components/common/Card.vue';
-import { ref } from 'vue';
+import Card from '@/components/common/Card.vue'
+import Badge from '@/components/common/Badge.vue'
+import { storeToRefs } from 'pinia'
+import { useStatusReportStore } from '@/stores/status-store'
+import { computed } from 'vue'
 
-// 작전 정보
-const operationName = ref('천둥');
-const operationStatus = ref('진행중');
-const commanderName = ref('신중건');
+// Store 연결
+const statusReportStore = useStatusReportStore()
+const { statusReport } = storeToRefs(statusReportStore)
+
+// 작전 상태에 따른 색상
+const statusColor = computed<'green' | 'yellow' | 'red'>(() => {
+  switch (statusReport.value.status) {
+    case '방어':
+      return 'green'
+    case '수색':
+      return 'yellow'
+    case '공격':
+      return 'red'
+    default:
+      return 'green'
+  }
+})
 </script>
 <template>
-  <Card title="상황 보고">
+  <Card title="임무 상태">
     <div class="space-y-1">
       <!-- 작전 정보 -->
       <div class="p-2 flex items-center justify-between">
         <h5 class="font-semibold text-primary-800">
-          {{ operationName }} <span class="text-xs">({{ commanderName }})</span>
+          {{ statusReport.operationName }} 
+          <span class="text-xs">({{ statusReport.commander }})</span>
         </h5>
-        <span class="px-2 py-1 bg-green-500 text-white text-xs rounded-full font-medium">
-          {{ operationStatus }}
-        </span>
+        <Badge :text="statusReport.status" :color="statusColor" />
       </div>
 
       <!-- 작전 목표 -->
-      <div class="bg-gray-50 rounded p-2 border border-gray-200 text-sm">
-        <p>현재 전면전 개시 2일차로 아군, 적군간 대화력전이 실시되고 있는 상황.<br />
-        적 기갑부대는 남방한계선 북측 20km 지점까지 남하하였으며 아군은 공격개시선 남측 10km 지점에서 공격명령 대기중.<br />
-        아군의 임무는 남하하는 적 기갑부대를 격멸하고 목표지점인 00을 확보하는 것.</p>
+      <div class="bg-gray-50 rounded p-2 border border-gray-200 text-sm whitespace-pre-line">
+        <p>{{ statusReport.objective }}</p>
       </div>
     </div>
   </Card>

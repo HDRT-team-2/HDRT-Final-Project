@@ -3,8 +3,8 @@ import { watch } from 'vue';
 
 // Pinia
 import { storeToRefs } from 'pinia'
-import { usePositionStore } from '@/stores/position'
-import { useDetectionStore } from '@/stores/detection';
+import { usePositionStore } from '@/stores/position-store'
+import { useDetectionStore } from '@/stores/detection-store';
 import MapCanvas from './MapCanvas.vue';
 
 // Store 연결
@@ -33,7 +33,7 @@ watch(objects, (newObjects) => {
 
 </script>
 <template>
-  <div class="battlefield-map">
+  <div class="w-full h-full flex items-center justify-center p-2">
     <MapCanvas
       :current="current"
       :target="target"

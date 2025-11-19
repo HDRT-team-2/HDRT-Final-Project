@@ -43,16 +43,22 @@ const getAlignClass = (align?: string) => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto rounded-lg border border-gray-200" :style="maxHeight ? { maxHeight } : {}">
+  <div class="h-full overflow-auto" :style="maxHeight ? { maxHeight } : {}">
     <table class="w-full" :class="getSizeClass()">
       <!-- Header -->
-      <thead class="bg-gray-50 sticky top-0 z-10">
-        <tr>
+      <thead class="sticky top-0 z-10">
+        <tr class="bg-rotem-100 rounded-lg">
           <th
-            v-for="column in columns"
+            v-for="(column, idx) in columns"
             :key="column.key"
-            class="px-3 py-2 font-medium text-gray-900 border-b border-gray-200"
-            :class="getAlignClass(column.align)"
+            class="py-1 text-xs font-bold"
+            :class="[
+              getAlignClass(column.align),
+              {
+                'rounded-l-lg': idx === 0,
+                'rounded-r-lg': idx === columns.length - 1
+              }
+            ]"
             :style="column.width ? { width: column.width } : {}"
           >
             {{ column.label }}
@@ -66,16 +72,16 @@ const getAlignClass = (align?: string) => {
           v-for="(row, index) in data"
           :key="index"
           :class="{
-            'bg-gray-50': striped && index % 2 === 1,
-            'hover:bg-gray-100': hover,
-            'border-b border-gray-200': bordered && index < data.length - 1
+            'bg-rotem-100': striped && index % 2 === 1,
+            'hover:bg-rotem-100': hover,
+            'border-b border-rotem-100': bordered && index < data.length - 1
           }"
           class="transition-colors"
         >
           <td
             v-for="column in columns"
             :key="column.key"
-            class="px-3 py-2 text-gray-700"
+            class="py-1"
             :class="getAlignClass(column.align)"
           >
             <slot 

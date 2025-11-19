@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { usePositionStore } from '@/stores/position'
+import { usePositionStore } from '@/stores/position-store'
 import { ApiService } from '@/services/api_service'
 
 export interface ChatResponse {
