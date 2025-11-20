@@ -8,7 +8,7 @@ import type { DetectionResponse } from '@/types/detection'
  */
 interface DetectionMessage {
   type: 'detection_update'
-  objects: DetectionResponse[]
+  object: DetectionResponse
 }
 
 /**
@@ -39,10 +39,18 @@ export function useDetectionWebSocket() {
       // onMessage
       (data: DetectionMessage) => {
         // 백엔드에서 보내는 메시지 형식:
-        // { type: 'detection_update', objects: [...] }
-        if (data.type === 'detection_update' && Array.isArray(data.objects)) {
-          detectionStore.updateObjects(data.objects)
-          console.log(`탐지 수신: ${data.objects.length}개 객체`)
+        // { type: 'detection_update', 
+        //   object: {  
+        //     "tracking_id": 0001, 
+        //     "class_id": 5, 
+        //     "x": 123.445, 
+        //     "z": 67.849,
+        //     "alive": true 
+        //   }
+        // }
+        if (data.type === 'detection_update' && data.object) {
+          detectionStore.updateObject(data.object)
+          console.log(`탐지 수신: [${data.object.tracking_id}] ${data.object.class_id}`)
         }
       },
       // onError

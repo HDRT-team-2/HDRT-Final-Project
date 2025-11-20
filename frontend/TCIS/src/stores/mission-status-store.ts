@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { StatusReport, OperationStatus } from '@/types/status'
+import type { StatusReport, OperationStatus } from '@/types/mission-status'
 
 export const useStatusReportStore = defineStore('statusReport', () => {
   const statusReport = ref<StatusReport>({

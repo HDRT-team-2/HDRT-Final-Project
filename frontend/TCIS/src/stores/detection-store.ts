@@ -89,15 +89,15 @@ export const useDetectionStore = defineStore('detection', () => {
       class_name,
       position: {
         x: data.x,
-        y: data.y
+        y: data.z
       },
-      detectedAt: new Date(),
-      lastUpdated: new Date()
+      time: new Date(),
+      alive: data.alive
     }
   }
   
   /**
-   * 탐지 객체 추가 또는 업데이트 (단일)
+   * 탐지 객체 추가 또는 업데이트
    * - 같은 tracking_id → 위치 업데이트
    * - 새로운 tracking_id → 새 객체 추가
    */
@@ -109,8 +109,8 @@ export const useDetectionStore = defineStore('detection', () => {
     if (existing) {
       // 기존 객체 위치 업데이트
       existing.position.x = data.x
-      existing.position.y = data.y
-      existing.lastUpdated = new Date()
+      existing.position.y = data.z
+      existing.alive = data.alive
       
       console.log(`객체 업데이트 [${data.tracking_id}]:`, existing.class_name, existing.position)
     } else {
@@ -120,18 +120,6 @@ export const useDetectionStore = defineStore('detection', () => {
       
       console.log(`새 객체 발견 [${data.tracking_id}]:`, newObj.class_name, newObj.position)
     }
-  }
-  
-  /**
-   * 탐지 객체 일괄 업데이트 (WebSocket에서 호출)
-   * - 각 객체마다 추가 또는 업데이트
-   */
-  function updateObjects(dataList: DetectionResponse[]) {
-    dataList.forEach(data => {
-      updateObject(data)
-    })
-    
-    console.log(`탐지 업데이트: 총 ${objects.value.length}개 객체`)
   }
   
   /**
@@ -169,7 +157,6 @@ export const useDetectionStore = defineStore('detection', () => {
     
     // Actions
     updateObject,
-    updateObjects,
     clearObjects,
     reset
   }

@@ -47,15 +47,14 @@ export const CLASS_NAME_KR: Record<ObjectClassName, string> = {
   wall: '벽'
 }
 
-// 탐지된 객체
+// 프론트에서 사용할 형태
 export interface DetectedObject {
   tracking_id: number // 백엔드에서 추적 중인 고유 ID
   class_id: number // 백엔드에서 오는 클래스 ID
   class_name: ObjectClassName // 변환된 클래스 이름
   position: Coordinate // 위치
-  detectedAt: Date // 발견 시간
-  lastUpdated: Date // 마지막 업데이트 시간
-  distance?: number // 거리 (계산됨)
+  time: Date // 발견 시간
+  alive: boolean // 생존 여부
 }
 
 // 백엔드에서 오는 원본 데이터
@@ -63,8 +62,8 @@ export interface DetectionResponse {
     tracking_id: number
     class_id: number
     x: number
-    y: number
-    timestamp?: string
+    z: number,
+    alive: boolean,
 }
 
 // Detection Store 상태
