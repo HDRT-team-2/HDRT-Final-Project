@@ -10,7 +10,7 @@ const leftSideBar = {
         'CommandPanel'
         
     ],
-    col: [1, 1, 8]
+    col: [2.5, 1, 7]
 }
 
 // 우측 사이드바 설정  
@@ -28,7 +28,6 @@ const layoutConfig = {
     leftSidebar: 3,    // 좌측 사이드바 비율
     map: 7,            // 맵 영역 비율  
     rightSidebar: 3    // 우측 사이드바 비율
-    // 총합: 3:6:3 = 25% : 50% : 25%
 }
 
 // Flex 스타일 생성 함수
