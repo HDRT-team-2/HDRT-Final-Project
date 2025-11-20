@@ -177,12 +177,12 @@ def get_action():
 def init():
     config = {
         "startMode": "start",  # Options: "start" or "pause"
-        "blStartX": 32.95223459192809,  #Blue Start Position
-        "blStartY": 15.9,
-        "blStartZ": 224.07352571071172,
+        "blStartX": 150,  #Blue Start Position
+        "blStartY": 12,
+        "blStartZ": 200,
         "rdStartX": 150, #Red Start Position
         "rdStartY": 10,
-        "rdStartZ": 240,
+        "rdStartZ": 250,
         "trackingMode": True,
         "detactMode": False,
         "logMode": True,

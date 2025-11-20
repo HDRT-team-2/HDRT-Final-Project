@@ -462,13 +462,20 @@ def fcs_function(request_data : dict):
     print(f"적 방위각(12시 기준, 시계방향): {azimuth_deg_12clock:.2f} deg")
 
     # 계산 5. 포탑 수직 각도 제한 확인
-    # 예: 차체 pitch 기준 -10 ~ +10
-    turret_min_angle = my_chassis_x - 10.0  # 최저 -10도까지만 허용
-    turret_max_angle = my_chassis_x + 10.0  # 최대 10도까지만 허용
+    chassis_pitch = normalize_angle_deg_for_fcs(my_chassis_x)   # 차체 각도 정규화
+    turret_pitch = normalize_angle_deg_for_fcs(my_chassis_y)    # 포신 피치 정규화
+
+    elev_angle_norm = None
+    if elevation_angle is not None: # 탄도해가 무사히 계산되었을 경우, 탄도해도 정규화.
+        elev_angle_norm = normalize_angle_deg_for_fcs(elevation_angle)
+
+    # 예: 차체 pitch 기준 -5 ~ +10
+    turret_min_angle = chassis_pitch - 5.0   # 최저 -5도까지만 허용
+    turret_max_angle = turret_pitch + 10.0   # 최대 10도까지만 허용
 
     in_elev_limit = False
     if elevation_angle is not None:
-        in_elev_limit = (turret_min_angle <= elevation_angle <= turret_max_angle)
+        in_elev_limit = (turret_min_angle <= elev_angle_norm <= turret_max_angle)
         print(
             f"포탑 수직 제한: [{turret_min_angle:.2f}, {turret_max_angle:.2f}] "
             f"→ 필요고각 {elevation_angle:.2f} → in_elev_limit={in_elev_limit}"
@@ -485,8 +492,8 @@ def fcs_function(request_data : dict):
     elev_ok = has_solution and in_elev_limit        # 수직 각도 제약 만족 여부
     yaw_err = normalize_angle_deg_for_fcs(azimuth_deg_12clock - my_turret_x)    # 포탑 정렬 여부
     pitch_err = 0.0
-    if elevation_angle is not None:
-        pitch_err = elevation_angle - my_turret_y
+    if elev_angle_norm is not None:
+        pitch_err = normalize_angle_deg_for_fcs(elev_angle_norm - turret_pitch)
     yaw_aligned   = abs(yaw_err)   < 1.0   # 1도 이내
     pitch_aligned = abs(pitch_err) < 1.0   # 1도 이내
     #speed_ok = abs(my_speed) < 5.0         # 차체 사격가능 안정성 평가 1 : 속도가 5 미만인가?
