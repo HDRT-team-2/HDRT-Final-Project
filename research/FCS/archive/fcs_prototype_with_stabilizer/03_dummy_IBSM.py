@@ -179,7 +179,7 @@ def init():
         "startMode": "start",  # Options: "start" or "pause"
         "blStartX": 150,  #Blue Start Position
         "blStartY": 12,
-        "blStartZ": 200,
+        "blStartZ": 130,
         "rdStartX": 150, #Red Start Position
         "rdStartY": 10,
         "rdStartZ": 250,

@@ -463,7 +463,7 @@ def fcs_function(request_data : dict):
 
     # 계산 5. 포탑 수직 각도 제한 확인
     chassis_pitch = normalize_angle_deg_for_fcs(my_chassis_x)   # 차체 각도 정규화
-    turret_pitch = normalize_angle_deg_for_fcs(my_chassis_y)    # 포신 피치 정규화
+    turret_pitch = normalize_angle_deg_for_fcs(my_turret_y)    # 포신 피치 정규화
 
     elev_angle_norm = None
     if elevation_angle is not None: # 탄도해가 무사히 계산되었을 경우, 탄도해도 정규화.
@@ -471,7 +471,7 @@ def fcs_function(request_data : dict):
 
     # 예: 차체 pitch 기준 -5 ~ +10
     turret_min_angle = chassis_pitch - 5.0   # 최저 -5도까지만 허용
-    turret_max_angle = turret_pitch + 10.0   # 최대 10도까지만 허용
+    turret_max_angle = chassis_pitch + 10.0   # 최대 10도까지만 허용
 
     in_elev_limit = False
     if elevation_angle is not None:
