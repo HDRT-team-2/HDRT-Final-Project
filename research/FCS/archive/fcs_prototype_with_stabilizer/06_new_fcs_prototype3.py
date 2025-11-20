@@ -389,6 +389,9 @@ def normalize_angle_deg_for_fcs(angle: float) -> float:
 # FCS 기능 메인
 def fcs_function(request_data : dict):
     global rf_command, rf_weight, fire_command, fire_target_pos, new_fire_point_pos
+    
+    # IBSM으로부터 받아온 request_data들을 사용하기 위해 변수로 저장.
+    data =  request_data    
 
     # 매 프레임 초기화 (stale 값 방지)
     rf_command = ""
@@ -396,10 +399,13 @@ def fcs_function(request_data : dict):
     fire_command = False
     new_fire_point_pos = None
     fire_target_pos = None
-    
-    # IBSM으로 부터 읽어온 값들을 계산에 쓰기 위한 변수로 저장(payload 누락에 대한 예외처리, 0 추가.)
-    data =  request_data
 
+    # IBSM으로부터 받은 타겟의 존재 여부 확인 : 적을 상대하는게 아닌, 스태빌라이저만 필요할 때, FCS는 실행시키지 않게 하기
+    ibsm_target = data.get("ibsm_target_pos")
+    if (not isinstance(ibsm_target, dict) or "x" not in ibsm_target or "y" not in ibsm_target or "z" not in ibsm_target):
+        return   # 더 이상 계산하지 않고 바로 종료, 추가로 위에서 매 프레임 초기화를 하기 때문에 fire_target_pos도 None으로 반환
+
+    # IBSM으로 부터 읽어온 값들을 계산에 쓰기 위한 변수로 저장(payload 누락에 대한 예외처리, 0 추가.)
     maptype = int(data.get("map_type", 0))      # 맵 타입
     check_maptype(maptype)
     enemy_pos_x = float(data.get("ibsm_target_pos", {}).get("x", 0))    # 적 x좌표 (시뮬레이터 기준)
