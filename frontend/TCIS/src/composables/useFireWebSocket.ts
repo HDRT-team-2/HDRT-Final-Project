@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useFireStore } from '@/stores/fire-store'
 import { SocketIOService } from '@/services/socketio_service'
-import type { FireResponse} from '@/types/fire'
+import type { FireMessage, HitMessage } from '@/types/fire'
 
 /**
  * SocketIO로 발포/명중 이벤트 수신 (실시간)
@@ -27,28 +27,37 @@ export function useFireWebSocket() {
   function connect() {
     service.connect(
       // eventName
-      'fire_result',
+      'fire',
       // onMessage
-      (data: any) => {
-        // 발포 이벤트
+      (data: FireMessage | HitMessage) => {
+        // 발사 이벤트
         if (data.type === 'fire_event') {
-          fireStore.addFire(data as FireResponse)
-          console.log(`발포 수신: 대상 [${data.target_tracking_id}]`)
+          const fireData = data as FireMessage
+          fireStore.addFire({
+            target_tracking_id: fireData.target_tracking_id,
+            ally_id: fireData.ally_id,
+            class_id: fireData.class_id
+          })
+          console.log(`발사 수신: 아군 [${fireData.ally_id}] → 대상 [${fireData.target_tracking_id}] (${fireData.target_class_name})`)
         }
-        
+        // 명중 결과 이벤트
+        else if (data.type === 'hit_result') {
+          const hitData = data as HitMessage
+          fireStore.updateFireResult(hitData.target_tracking_id, hitData.result)
+          console.log(`명중 결과 수신: 대상 [${hitData.target_tracking_id}] - ${hitData.result}`)
+        }
       },
-      // onError
-      (error) => {
-        console.error('Fire SocketIO 에러:', error)
-        isConnected.value = false
+      // onConnect
+      () => {
+        isConnected.value = true
+        console.log('Fire WebSocket 연결됨')
       },
       // onDisconnect
       () => {
         isConnected.value = false
+        console.log('Fire WebSocket 연결 끊김')
       }
     )
-    
-    isConnected.value = true
   }
   
   /**

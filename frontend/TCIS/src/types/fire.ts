@@ -11,12 +11,27 @@ export interface FireEvent {
   result?: FireResult // 사격 결과
 }
 
-// 백엔드에서 오는 발포 데이터
+// 백엔드에서 오는 발사 데이터
 export interface FireResponse {
   target_tracking_id: number
-  timestamp?: string
+  ally_id: string
+  class_id: number
 }
 
+// 백엔드에서 오는 발사 메시지
+export interface FireMessage {
+  type: 'fire_event'
+  target_tracking_id: number
+  ally_id: string
+  class_id: number
+}
+
+// 백엔드에서 오는 명중 메시지
+export interface HitMessage {
+  type: 'hit_result'
+  target_tracking_id: number
+  result: FireResult // 'hit' | 'miss'
+}
 
 // Fire Store 상태
 export interface FireState {
