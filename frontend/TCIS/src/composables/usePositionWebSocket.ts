@@ -1,19 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { usePositionStore } from '@/stores/position-store'
 import { SocketIOService } from '@/services/socketio_service'
-import type { TankPosition } from '@/types/position'
-
-/**
- * Backend에서 오는 Position 메시지 타입
- */
-interface PositionMessage {
-  type: 'position_update'
-  tanks: Array<{
-    tank_id: string
-    x: number
-    y: number
-  }>
-}
+import type { PositionMessage } from '@/types/position'
 
 /**
  * SocketIO로 현재 위치 수신 (실시간)
@@ -46,11 +34,7 @@ export function usePositionWebSocket() {
         // { type: 'position_update', tanks: [{ tank_id: '17TK-101', x: 150, y: 200 }, ...] }
         if (data.type === 'position_update' && Array.isArray(data.tanks)) {
           data.tanks.forEach(tank => {
-            positionStore.updateTankPosition({
-              tank_id: tank.tank_id,
-              x: tank.x,
-              y: tank.y
-            })
+            positionStore.updateTankPosition(tank)
           })
           console.log(`위치 수신: ${data.tanks.length}개 탱크`)
         }

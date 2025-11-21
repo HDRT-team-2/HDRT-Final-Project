@@ -12,3 +12,8 @@ export interface TankPosition extends Coordinate {
   tank_id: string  // 탱크 식별자
 }
 
+// 백엔드에서 오는 Position 메시지 타입
+export interface PositionMessage {
+  type: 'position_update'
+  tanks: TankPosition[]
+}

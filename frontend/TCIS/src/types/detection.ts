@@ -66,6 +66,12 @@ export interface DetectionResponse {
     alive: boolean,
 }
 
+// 백엔드에서 오는 Detection 메시지 타입
+export interface DetectionMessage {
+  type: 'detection_update'
+  object: DetectionResponse
+}
+
 // Detection Store 상태
 export interface DetectionState {
   objects: DetectedObject[] // 탐지된 모든 객체

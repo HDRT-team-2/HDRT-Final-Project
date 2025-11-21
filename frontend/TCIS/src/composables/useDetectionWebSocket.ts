@@ -1,15 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useDetectionStore } from '@/stores/detection-store'
 import { SocketIOService } from '@/services/socketio_service'
-import type { DetectionResponse } from '@/types/detection'
-
-/**
- * Backend에서 오는 Detection 메시지 타입
- */
-interface DetectionMessage {
-  type: 'detection_update'
-  object: DetectionResponse
-}
+import type { DetectionMessage } from '@/types/detection'
 
 /**
  * SocketIO로 탐지 객체 수신 (실시간)
