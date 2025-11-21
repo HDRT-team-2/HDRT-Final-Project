@@ -4,7 +4,8 @@ import Card from '@/components/common/Card.vue'
 import CommandHeader from '@/components/commandPanel/CommandHeader.vue';
 import CommandHistory from '@/components/commandPanel/CommandHistory.vue';
 import CommandInput from '@/components/commandPanel/CommandInput.vue';
-import { useChatCommand } from '@/composables/useChatCommand';  // ← 추가
+import { useChatCommand } from '@/composables/useChatCommand';
+import { useTargetCommand } from '@/composables/useTargetCommand';
 
 interface CommandEntry {
   id: number;
@@ -19,8 +20,9 @@ const commandHistory = ref<CommandEntry[]>([
 
 let commandIdCounter = 2;
 
-// Chat Command Composable 사용
+// Chat Command Composable 사용 (Frontend LLM)
 const { sendChatMessage, isSending } = useChatCommand();
+const { sendTarget } = useTargetCommand();
 
 // 명령어 입력 처리
 const handleCommandSubmit = async (command: string) => { 
@@ -35,22 +37,28 @@ const handleCommandSubmit = async (command: string) => {
     type: 'input'
   });
 
-  // Backend로 전송
+  // Frontend LLM으로 분석
   const result = await sendChatMessage(command);
   
   if (result) {
-    // Backend 응답 추가
+    // LLM 응답 추가
     commandHistory.value.push({
       id: commandIdCounter++,
       command: result.message,
       timestamp,
       type: result.type === 'error' ? 'error' : 'output'
     });
+
+    // command 타입이면 backend로 target 전송
+    if (result.type === 'command' && result.x !== undefined && result.y !== undefined) {
+      await sendTarget();
+      console.log(`[CommandPanel] Target 전송 완료: (${result.x}, ${result.y})`)
+    }
   } else {
     // 에러 처리
     commandHistory.value.push({
       id: commandIdCounter++,
-      command: '서버 오류가 발생했습니다',
+      command: 'LLM 처리 중 오류가 발생했습니다',
       timestamp,
       type: 'error'
     });
