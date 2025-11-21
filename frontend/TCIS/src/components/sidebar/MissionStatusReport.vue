@@ -7,19 +7,19 @@ import { computed } from 'vue'
 
 // Store 연결
 const statusReportStore = useStatusReportStore()
-const { statusReport } = storeToRefs(statusReportStore)
+const { missionReport } = storeToRefs(statusReportStore)
 
 // 작전 상태에 따른 색상
-const statusColor = computed<'green' | 'yellow' | 'red'>(() => {
-  switch (statusReport.value.status) {
+const statusColor = computed<'success' | 'yellow' | 'danger'>(() => {
+  switch (missionReport.value.mission) {
     case '방어':
-      return 'green'
+      return 'success'
     case '수색':
       return 'yellow'
     case '공격':
-      return 'red'
+      return 'danger'
     default:
-      return 'green'
+      return 'success'
   }
 })
 </script>
@@ -29,15 +29,15 @@ const statusColor = computed<'green' | 'yellow' | 'red'>(() => {
       <!-- 작전 정보 -->
       <div class="p-2 flex items-center justify-between">
         <h5 class="font-semibold text-primary-800">
-          {{ statusReport.operationName }} 
-          <span class="text-xs">({{ statusReport.commander }})</span>
+          {{ missionReport.operationName }} 
+          <span class="text-xs">({{ missionReport.commander }})</span>
         </h5>
-        <Badge :text="statusReport.status" :color="statusColor" />
+        <Badge :text="missionReport.mission" :color="statusColor" />
       </div>
 
       <!-- 작전 목표 -->
       <div class="bg-gray-50 rounded p-2 border border-gray-200 text-sm whitespace-pre-line">
-        <p>{{ statusReport.objective }}</p>
+        <p>{{ missionReport.objective }}</p>
       </div>
     </div>
   </Card>

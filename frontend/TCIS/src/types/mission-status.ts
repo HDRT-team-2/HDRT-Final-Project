@@ -1,8 +1,8 @@
-export type OperationStatus = '방어' | '수색' | '공격'
+export type OperationMission = '방어' | '수색' | '공격'
 
-export interface StatusReport {
+export interface MissionReport {
   operationName: string
   commander: string
-  status: OperationStatus
+  mission: OperationMission
   objective: string
 }

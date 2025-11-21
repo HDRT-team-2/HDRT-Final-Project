@@ -46,7 +46,11 @@ export function useChatCommand() {
       
       // command 타입이면 target 설정
       if (result.type === 'command' && result.x !== undefined && result.y !== undefined) {
-        positionStore.setTarget(result.x, result.y)
+        positionStore.setTarget({
+          x: result.x,
+          y: result.y,
+          mission: 'defend'
+        })
         console.log(`목표 위치 설정: (${result.x}, ${result.y})`)
       }
       

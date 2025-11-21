@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { TankPosition, TargetPosition } from '@/types/position'
 import type { DetectedObject } from '@/types/detection'
 import { useMapStore } from '@/stores/map-store'
+import { usePositionStore } from '@/stores/position-store'
 
 import MyTankIcon from '@/components/icons/MyTankIcon.vue'
 import GoalIcon from '@/components/icons/GoalIcon.vue'
@@ -15,6 +16,35 @@ import MineIcon from '../icons/MineIcon.vue'
 
 const mapStore = useMapStore()
 const { currentMapImage } = storeToRefs(mapStore)
+const positionStore = usePositionStore()
+
+// 'a' 키 눌림 상태 추적
+const isAKeyPressed = ref(false)
+
+// 키보드 이벤트 리스너
+function handleKeyDown(event: KeyboardEvent) {
+  if (event.key === 'a' || event.key === 'A') {
+    isAKeyPressed.value = true
+  }
+}
+
+function handleKeyUp(event: KeyboardEvent) {
+  if (event.key === 'a' || event.key === 'A') {
+    isAKeyPressed.value = false
+  }
+}
+
+// 컴포넌트 마운트 시 키보드 리스너 등록
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keyup', handleKeyUp)
+})
+
+// 컴포넌트 언마운트 시 리스너 제거
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keyup', handleKeyUp)
+})
 
 interface Props {
   myTanks: TankPosition[]            // 아군 탱크들
@@ -40,6 +70,42 @@ function coordToSvg(x: number, y: number) {
   }
 }
 
+// SVG → 좌표 변환 (Y축 반전)
+function svgToCoord(svgX: number, svgY: number) {
+  return {
+    x: (svgX / canvasWidth) * coordWidth,
+    y: coordHeight - (svgY / canvasHeight) * coordHeight  // Y축 반전
+  }
+}
+
+// 우클릭 핸들러
+// @contextmenu: 우클릭 이벤트
+// preventDefault(): 브라우저 기본 컨텍스트 메뉴를 막음
+function handleContextMenu(event: MouseEvent) {
+  event.preventDefault() // 우클릭 시 나오는 브라우저 메뉴 막기
+  
+  // SVG 내 클릭 위치 계산
+  const svg = event.currentTarget as SVGSVGElement
+  const rect = svg.getBoundingClientRect()
+  const svgX = ((event.clientX - rect.left) / rect.width) * canvasWidth
+  const svgY = ((event.clientY - rect.top) / rect.height) * canvasHeight
+  
+  // SVG 좌표 → 게임 좌표 변환
+  const coord = svgToCoord(svgX, svgY)
+  
+  // 'a'키 눌린 상태에 따라 mission 결정
+  const mission = isAKeyPressed.value ? 'attack_n_search' : 'defend'
+  
+  // position store에 target 설정
+  positionStore.setTarget({
+    x: coord.x,
+    y: coord.y,
+    mission
+  })
+  
+  console.log(`목표 설정: (${coord.x.toFixed(2)}, ${coord.y.toFixed(2)}), mission: ${mission}`)
+}
+
 </script>
 
 <template>
@@ -47,6 +113,7 @@ function coordToSvg(x: number, y: number) {
     class="w-full h-full"
     :viewBox="`0 0 ${canvasWidth} ${canvasHeight}`"
     preserveAspectRatio="xMidYMid meet"
+    @contextmenu="handleContextMenu"
   >
     <!-- 배경 이미지 -->
     <defs>

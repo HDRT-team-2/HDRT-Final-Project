@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { TargetPosition, TankPosition } from '@/types/position'
+import type { TargetPosition, TankPosition, MissionType } from '@/types/position'
 
 export const usePositionStore = defineStore('position', () => {
   // State---------------------------------------
@@ -44,12 +44,8 @@ export const usePositionStore = defineStore('position', () => {
   }
 
   //목표 위치 설정 (TargetInput 또는 Map에서 호출)
-  function setTarget(x: number, y: number) {
-    target.value = {
-      x,
-      y,
-      setAt: new Date()
-    }
+  function setTarget(targetData: TargetPosition) {
+    target.value = targetData
   }
 
   // 목표 위치 초기화

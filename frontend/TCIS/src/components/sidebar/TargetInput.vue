@@ -55,7 +55,11 @@ const handleBlur = () => {
     }
     
     if (!isNaN(x) && !isNaN(y)) {
-      positionStore.setTarget(x, y)
+      positionStore.setTarget({
+        x,
+        y,
+        mission: 'defend'
+      })
     }
   }
 }
