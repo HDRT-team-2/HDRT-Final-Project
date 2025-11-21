@@ -34,17 +34,17 @@ export function useFireWebSocket() {
         if (data.type === 'fire_event') {
           const fireData = data as FireMessage
           fireStore.addFire({
-            target_tracking_id: fireData.target_tracking_id,
-            ally_id: fireData.ally_id,
-            class_id: fireData.class_id
+            target_tracking_id: fireData.fire.target_tracking_id,
+            ally_id: fireData.fire.ally_id,
+            class_id: fireData.fire.class_id
           })
-          console.log(`발사 수신: 아군 [${fireData.ally_id}] → 대상 [${fireData.target_tracking_id}] (${fireData.target_class_name})`)
+          console.log(`발사 수신: 아군 [${fireData.fire.ally_id}] → 대상 [${fireData.fire.target_tracking_id}]`)
         }
         // 명중 결과 이벤트
         else if (data.type === 'hit_result') {
           const hitData = data as HitMessage
-          fireStore.updateFireResult(hitData.target_tracking_id, hitData.result)
-          console.log(`명중 결과 수신: 대상 [${hitData.target_tracking_id}] - ${hitData.result}`)
+          fireStore.updateFireResult(hitData.data.target_tracking_id, hitData.data.result)
+          console.log(`명중 결과 수신: 대상 [${hitData.data.target_tracking_id}] - ${hitData.data.result}`)
         }
       },
       // onConnect

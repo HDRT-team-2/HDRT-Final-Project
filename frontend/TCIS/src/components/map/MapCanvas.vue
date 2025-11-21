@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { TankPosition } from '@/types/position'
 import type { DetectedObject } from '@/types/detection'
@@ -9,11 +9,8 @@ import { useTargetCommand } from '@/composables/useTargetCommand'
 
 import MyTankIcon from '@/components/icons/MyTankIcon.vue'
 import GoalIcon from '@/components/icons/GoalIcon.vue'
-import EnemyIcon from '@/components/icons/EnemyIcon.vue'
-import CarIcon from '@/components/icons/CarIcon.vue'
-import PersonIcon from '@/components/icons/PersonIcon.vue'
-import RockIcon from '../icons/RockIcon.vue'
-import MineIcon from '../icons/MineIcon.vue'
+import TrajectoryArcs from './TrajectoryArcs.vue'
+import DetectedObjects from './DetectedObjects.vue'
 
 const mapStore = useMapStore()
 const { currentMapImage } = storeToRefs(mapStore)
@@ -141,8 +138,11 @@ function handleContextMenu(event: MouseEvent) {
     <!-- 그리드 오버레이 -->
     <rect width="100%" height="100%" fill="url(#grid)" />
     
+    <!-- 포물선 애니메이션 -->
+    <TrajectoryArcs :my-tanks="myTanks" :coord-to-svg="coordToSvg" />
+    
     <!-- 목표 위치 (있으면) -->
-     <GoalIcon
+    <GoalIcon
       v-if="target"
       :x="coordToSvg(target.x, target.y).x"
       :y="coordToSvg(target.x, target.y).y"
@@ -150,50 +150,7 @@ function handleContextMenu(event: MouseEvent) {
     />
     
     <!-- 탐지된 객체들 -->
-    <g v-for="obj in objects" :key="obj.tracking_id">
-      <!-- 적 전차 (사각형) -->
-       <EnemyIcon 
-        v-if="obj.class_name === 'tank'"
-        :x="coordToSvg(obj.position.x, obj.position.y).x"
-        :y="coordToSvg(obj.position.x, obj.position.y).y"
-        :size="20"
-      />
-
-      <!-- 적 보병 (원) -->
-       <PersonIcon 
-        v-else-if="obj.class_name === 'human'"
-        :x="coordToSvg(obj.position.x, obj.position.y).x"
-        :y="coordToSvg(obj.position.x, obj.position.y).y"
-        :size="8"
-      />
-      <CarIcon 
-        v-else-if="obj.class_name === 'car' || obj.class_name === 'truck'"
-        :x="coordToSvg(obj.position.x, obj.position.y).x"
-        :y="coordToSvg(obj.position.x, obj.position.y).y"
-        :size="10"
-      />
-
-      <RockIcon 
-        v-else-if="obj.class_name === 'rock_small'"
-        :x="coordToSvg(obj.position.x, obj.position.y).x"
-        :y="coordToSvg(obj.position.x, obj.position.y).y"
-        :size="8"
-      />
-
-      <RockIcon 
-        v-else-if="obj.class_name === 'rock_large'"
-        :x="coordToSvg(obj.position.x, obj.position.y).x"
-        :y="coordToSvg(obj.position.x, obj.position.y).y"
-        :size="20"
-      />
-      
-      <MineIcon 
-        v-else-if="obj.class_name === 'mine'"
-        :x="coordToSvg(obj.position.x, obj.position.y).x"
-        :y="coordToSvg(obj.position.x, obj.position.y).y"
-        :size="14"
-      />
-    </g>
+    <DetectedObjects :objects="objects" :coord-to-svg="coordToSvg" />
     
     <!-- 내 전차들 위치 (마지막에 그려서 맨 위에 표시) -->
     <g v-for="tank in myTanks" :key="tank.tank_id">

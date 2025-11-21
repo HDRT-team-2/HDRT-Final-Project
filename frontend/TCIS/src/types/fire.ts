@@ -21,16 +21,16 @@ export interface FireResponse {
 // 백엔드에서 오는 발사 메시지
 export interface FireMessage {
   type: 'fire_event'
-  target_tracking_id: number
-  ally_id: string
-  class_id: number
+  fire: FireResponse
 }
 
 // 백엔드에서 오는 명중 메시지
 export interface HitMessage {
   type: 'hit_result'
-  target_tracking_id: number
-  result: FireResult // 'hit' | 'miss'
+  data: {
+    target_tracking_id: number
+    result: FireResult // 'hit' | 'miss'
+  }
 }
 
 // Fire Store 상태
