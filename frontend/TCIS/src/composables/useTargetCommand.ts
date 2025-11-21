@@ -1,12 +1,10 @@
 import { ref } from 'vue'
-import { usePositionStore } from '@/stores/position-store'
 import { useStatusReportStore } from '@/stores/mission-status-store'
 import { ApiService } from '@/services/api_service'
 import type { BackendMissionType, MissionType } from '@/types/position'
 
 // 목표 위치를 백엔드로 전송하고 이동 시작
 export function useTargetCommand() {
-  const positionStore = usePositionStore()
   const statusReportStore = useStatusReportStore()
   
   const isSending = ref(false)
@@ -17,7 +15,7 @@ export function useTargetCommand() {
    * TODO: 백엔드 연결 시 구현
    */
   async function sendTarget(): Promise<boolean> {
-    const target = positionStore.target
+    const target = statusReportStore.commandTarget
     if (!target) {
       error.value = '목표 위치가 설정되지 않았습니다'
       return false
@@ -38,19 +36,14 @@ export function useTargetCommand() {
       
       console.log('백엔드 응답:', res.data)
       
-      // 응답 데이터로 target과 mission 업데이트
+      // 응답 데이터로 mission status store 업데이트
       if (res.data) {
-        // position store 업데이트
-        positionStore.setTarget({
-          x: res.data.x,
-          y: res.data.y,
-          mission: target.mission
-        })
-        
-        // mission status store 업데이트 (한국어로 변환)
+        // mission status store 업데이트 (백엔드에서 확정된 미션 + 목표 위치)
+        // MissionStatusReport에서 표시, WebSocket으로도 계속 업데이트됨
         statusReportStore.setMissionFromBackend(res.data.mission)
+        statusReportStore.setTargetPosition(res.data.x, res.data.y)
         
-        console.log(`목표 업데이트: (${res.data.x}, ${res.data.y}), mission: ${res.data.mission}`)
+        console.log(`백엔드 확정 - 위치: (${res.data.x}, ${res.data.y}), 미션: ${res.data.mission}`)
       }
       
       return true

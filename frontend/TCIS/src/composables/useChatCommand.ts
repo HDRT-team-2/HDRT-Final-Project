@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { usePositionStore } from '@/stores/position-store'
+import { useStatusReportStore } from '@/stores/mission-status-store'
 import { ApiService } from '@/services/api_service'
 
 export interface ChatResponse {
@@ -14,7 +14,7 @@ export interface ChatResponse {
  * LLM 채팅 명령 처리
  */
 export function useChatCommand() {
-  const positionStore = usePositionStore()
+  const statusReportStore = useStatusReportStore()
   
   const isSending = ref(false)
   const error = ref<string | null>(null)
@@ -46,11 +46,7 @@ export function useChatCommand() {
       
       // command 타입이면 target 설정
       if (result.type === 'command' && result.x !== undefined && result.y !== undefined) {
-        positionStore.setTarget({
-          x: result.x,
-          y: result.y,
-          mission: 'defend'
-        })
+        statusReportStore.setCommandTarget(result.x, result.y, 'defend')
         console.log(`목표 위치 설정: (${result.x}, ${result.y})`)
       }
       

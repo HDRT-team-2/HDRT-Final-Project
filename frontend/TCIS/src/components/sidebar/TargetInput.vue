@@ -5,12 +5,12 @@ import { ref, watch } from 'vue'
 
 // pinia
 import { storeToRefs } from 'pinia'
-import { usePositionStore } from '@/stores/position-store'
+import { useStatusReportStore } from '@/stores/mission-status-store'
 
 // Store 연결
-const positionStore = usePositionStore()
-// 반응형으로 target 가져오기
-const { target } = storeToRefs(positionStore)
+const statusReportStore = useStatusReportStore()
+// 반응형으로 commandTarget 가져오기
+const { commandTarget } = storeToRefs(statusReportStore)
 
 const xPosition = ref('')
 const yPosition = ref('')
@@ -18,8 +18,8 @@ const yPosition = ref('')
 // 무한 루프 방지 플래그
 let isUpdatingFromStore = false
 
-// target 값이 변경되면 input 값도 업데이트 (지도 클릭 시)
-watch(target, (newTarget) => {
+// commandTarget 값이 변경되면 input 값도 업데이트 (지도 클릭 시)
+watch(commandTarget, (newTarget) => {
   isUpdatingFromStore = true
   
   if (newTarget && typeof newTarget.x === 'number' && typeof newTarget.y === 'number') {
@@ -55,11 +55,7 @@ const handleBlur = () => {
     }
     
     if (!isNaN(x) && !isNaN(y)) {
-      positionStore.setTarget({
-        x,
-        y,
-        mission: 'defend'
-      })
+      statusReportStore.setCommandTarget(x, y, 'defend')
     }
   }
 }

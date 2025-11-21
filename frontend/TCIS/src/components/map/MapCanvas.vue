@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import type { TankPosition, TargetPosition } from '@/types/position'
+import type { TankPosition } from '@/types/position'
 import type { DetectedObject } from '@/types/detection'
 import { useMapStore } from '@/stores/map-store'
-import { usePositionStore } from '@/stores/position-store'
+import { useStatusReportStore } from '@/stores/mission-status-store'
+import { useTargetCommand } from '@/composables/useTargetCommand'
 
 import MyTankIcon from '@/components/icons/MyTankIcon.vue'
 import GoalIcon from '@/components/icons/GoalIcon.vue'
@@ -16,7 +17,8 @@ import MineIcon from '../icons/MineIcon.vue'
 
 const mapStore = useMapStore()
 const { currentMapImage } = storeToRefs(mapStore)
-const positionStore = usePositionStore()
+const statusReportStore = useStatusReportStore()
+const { sendTarget } = useTargetCommand()
 
 // 'a' 키 눌림 상태 추적
 const isAKeyPressed = ref(false)
@@ -48,7 +50,7 @@ onUnmounted(() => {
 
 interface Props {
   myTanks: TankPosition[]            // 아군 탱크들
-  target: TargetPosition | null      // 목표 위치
+  target: { x: number; y: number } | null      // 목표 위치 (백엔드 확정)
   objects: DetectedObject[]          // 탐지된 객체들
 }
 
@@ -96,14 +98,13 @@ function handleContextMenu(event: MouseEvent) {
   // 'a'키 눌린 상태에 따라 mission 결정
   const mission = isAKeyPressed.value ? 'attack_n_search' : 'defend'
   
-  // position store에 target 설정
-  positionStore.setTarget({
-    x: coord.x,
-    y: coord.y,
-    mission
-  })
+  // mission-status store에 명령 target 설정
+  statusReportStore.setCommandTarget(coord.x, coord.y, mission)
   
   console.log(`목표 설정: (${coord.x.toFixed(2)}, ${coord.y.toFixed(2)}), mission: ${mission}`)
+  
+  // 즉시 백엔드로 전송
+  sendTarget()
 }
 
 </script>

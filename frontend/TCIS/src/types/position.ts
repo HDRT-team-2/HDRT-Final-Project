@@ -24,3 +24,9 @@ export interface PositionMessage {
   type: 'position_update'
   tanks: TankPosition[]
 }
+
+// 백엔드에서 오는 Mission 메시지 타입
+export interface MissionMessage {
+  type: 'mission_update'
+  mission: BackendMissionType
+}

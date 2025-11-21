@@ -4,29 +4,36 @@ import { watch } from 'vue';
 // Pinia
 import { storeToRefs } from 'pinia'
 import { usePositionStore } from '@/stores/position-store'
-import { useDetectionStore } from '@/stores/detection-store';
-import MapCanvas from './MapCanvas.vue';
+import { useDetectionStore } from '@/stores/detection-store'
+import { useStatusReportStore } from '@/stores/mission-status-store'
+import MapCanvas from './MapCanvas.vue'
+import { computed } from 'vue'
 
 // Store 연결
 const positionStore = usePositionStore()
 const detectionStore = useDetectionStore()
+const statusReportStore = useStatusReportStore()
 
 // 반응형으로 current, myTanks 가져오기
-const { current, myTanks, target } = storeToRefs(positionStore)
-console.log('현재 내 전차 평균 위치:', current.value.x, current.value.y);
+const { current, myTanks } = storeToRefs(positionStore)
+console.log('현재 내 전차 평균 위치:', current.value.x, current.value.y)
+
+// 목표 위치는 mission-status-store에서 가져오기 (백엔드 확정 위치)
+const { missionReport } = storeToRefs(statusReportStore)
+const target = computed(() => missionReport.value.targetPosition)
 watch(target, (newTarget) => {
   if (newTarget) {
-    console.log('목표 위치 변경됨:', newTarget.x, newTarget.y);
+    console.log('목표 위치 변경됨:', newTarget.x, newTarget.y)
   } else {
-    console.log('목표 위치가 제거됨');
+    console.log('목표 위치가 제거됨')
   }
-}, { immediate: true, deep: true });
+}, { immediate: true, deep: true })
 
 // 반응형으로 objects 가져오기
 const { objects } = storeToRefs(detectionStore)
 watch(objects, (newObjects) => {
-  console.log('탐지된 객체들 변경됨:', newObjects);
-}, { immediate: true });
+  console.log('탐지된 객체들 변경됨:', newObjects)
+}, { immediate: true })
 
 </script>
 <template>

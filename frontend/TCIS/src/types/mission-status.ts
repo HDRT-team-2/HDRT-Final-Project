@@ -5,4 +5,5 @@ export interface MissionReport {
   commander: string
   mission: OperationMission
   objective: string
+  targetPosition: { x: number; y: number } | null // 목표 위치 (백엔드에서 확정된 위치)
 }

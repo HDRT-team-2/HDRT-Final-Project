@@ -1,16 +1,12 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { TargetPosition, TankPosition, MissionType } from '@/types/position'
+import type { TankPosition } from '@/types/position'
 
 export const usePositionStore = defineStore('position', () => {
   // State---------------------------------------
   
   // 아군 탱크들의 위치 배열
   const myTanks = ref<TankPosition[]>([])
-
-  // 목표 위치 (사용자 입력 또는 지도 클릭으로 변경 예정)
-  const target = ref<TargetPosition | null>(null)
-
 
   // Computed-----------------------------------
   
@@ -25,9 +21,6 @@ export const usePositionStore = defineStore('position', () => {
     
     return { x: avgX, y: avgY }
   })
-  
-  // 목표가 설정되어 있는지 확인
-  const hasTarget = computed(() => target.value !== null)
 
   // Actions-------------------------------------
   
@@ -43,29 +36,15 @@ export const usePositionStore = defineStore('position', () => {
     }
   }
 
-  //목표 위치 설정 (TargetInput 또는 Map에서 호출)
-  function setTarget(targetData: TargetPosition) {
-    target.value = targetData
-  }
-
-  // 목표 위치 초기화
-  function clearTarget() {
-    target.value = null
-  }
-
   // Return (외부에 노출)
   return {
     // State
     myTanks,
-    target,
     
     // Computed
     current,
-    hasTarget,
     
     // Actions
     updateTankPosition,
-    setTarget,
-    clearTarget,
   }
 })
