@@ -11,12 +11,9 @@ import MapCanvas from './MapCanvas.vue';
 const positionStore = usePositionStore()
 const detectionStore = useDetectionStore()
 
-// 반응형으로 current 가져오기
-const { current } = storeToRefs(positionStore)
-console.log('현재 내 전차 위치:', current.value.x, current.value.y);
-
-// 반응형으로 target 가져오기
-const { target } = storeToRefs(positionStore)
+// 반응형으로 current, myTanks 가져오기
+const { current, myTanks, target } = storeToRefs(positionStore)
+console.log('현재 내 전차 평균 위치:', current.value.x, current.value.y);
 watch(target, (newTarget) => {
   if (newTarget) {
     console.log('목표 위치 변경됨:', newTarget.x, newTarget.y);
@@ -36,6 +33,7 @@ watch(objects, (newObjects) => {
   <div class="w-full h-full flex items-center justify-center p-2">
     <MapCanvas
       :current="current"
+      :my-tanks="myTanks"
       :target="target"
       :objects="objects"
     />

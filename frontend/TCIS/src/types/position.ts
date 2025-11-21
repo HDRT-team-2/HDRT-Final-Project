@@ -7,9 +7,8 @@ export interface Coordinate {
 export interface TargetPosition extends Coordinate {
   setAt?: Date
 }
-// 내 탱크 상태를 나타내는 인터페이스
-export interface TankStatus {
-  speed: number
-  isMoving: boolean
-  health: number
+// 내 탱크 위치 인터페이스
+export interface TankPosition extends Coordinate {
+  tank_id: string  // 탱크 식별자
 }
+

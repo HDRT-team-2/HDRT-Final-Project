@@ -8,8 +8,11 @@ import type { TankPosition } from '@/types/position'
  */
 interface PositionMessage {
   type: 'position_update'
-  x: number
-  y: number
+  tanks: Array<{
+    tank_id: string
+    x: number
+    y: number
+  }>
 }
 
 /**
@@ -40,15 +43,16 @@ export function usePositionWebSocket() {
       // onMessage
       (data: PositionMessage) => {
         // 백엔드에서 보내는 메시지 형식:
-        // { type: 'position_update', x: 150, y: 200 }
-        if (data.type === 'position_update') {
-          const position: TankPosition = {
-            x: data.x,
-            y: data.y
-          }
-          
-          positionStore.updateCurrentPosition(position)
-          console.log('위치 수신:', position)
+        // { type: 'position_update', tanks: [{ tank_id: '17TK-101', x: 150, y: 200 }, ...] }
+        if (data.type === 'position_update' && Array.isArray(data.tanks)) {
+          data.tanks.forEach(tank => {
+            positionStore.updateTankPosition({
+              tank_id: tank.tank_id,
+              x: tank.x,
+              y: tank.y
+            })
+          })
+          console.log(`위치 수신: ${data.tanks.length}개 탱크`)
         }
       },
       // onError

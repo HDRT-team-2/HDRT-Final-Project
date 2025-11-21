@@ -17,9 +17,9 @@ const mapStore = useMapStore()
 const { currentMapImage } = storeToRefs(mapStore)
 
 interface Props {
-  current: TankPosition    // 내 위치
-  target: TargetPosition | null  // 목표 위치
-  objects: DetectedObject[]      // 탐지된 객체들
+  myTanks: TankPosition[]            // 아군 탱크들
+  target: TargetPosition | null      // 목표 위치
+  objects: DetectedObject[]          // 탐지된 객체들
 }
 
 const props = defineProps<Props>()
@@ -127,12 +127,14 @@ function coordToSvg(x: number, y: number) {
       />
     </g>
     
-    <!-- 내 전차 위치 (마지막에 그려서 맨 위에 표시) -->
-     <MyTankIcon
-      :x="coordToSvg(current.x, current.y).x"
-      :y="coordToSvg(current.x, current.y).y"
-      :size="18"
-    />
+    <!-- 내 전차들 위치 (마지막에 그려서 맨 위에 표시) -->
+    <g v-for="tank in myTanks" :key="tank.tank_id">
+      <MyTankIcon
+        :x="coordToSvg(tank.x, tank.y).x"
+        :y="coordToSvg(tank.x, tank.y).y"
+        :size="18"
+      />
+    </g>
   </svg>
 </template>
 
