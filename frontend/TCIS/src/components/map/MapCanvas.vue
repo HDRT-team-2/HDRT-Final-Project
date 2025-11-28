@@ -147,6 +147,7 @@ function handleContextMenu(event: MouseEvent) {
       :x="coordToSvg(target.x, target.y).x"
       :y="coordToSvg(target.x, target.y).y"
       :size="8"
+      :is-danger="commandTarget?.mission === 'attack_n_search'"
     />
     
     <!-- 탐지된 객체들 -->
