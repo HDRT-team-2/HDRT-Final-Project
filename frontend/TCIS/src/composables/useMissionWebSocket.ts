@@ -1,15 +1,15 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { usePositionStore } from '@/stores/position-store'
+import { useStatusReportStore } from '@/stores/mission-status-store'
 import { SocketIOService } from '@/services/socketio_service'
-import type { PositionMessage } from '@/types/position'
+import type { MissionMessage } from '@/types/position'
 
 /**
- * SocketIO로 현재 위치 수신 (실시간)
+ * SocketIO로 미션 상태 수신 (실시간)
  * - 단방향: Backend → Frontend
- * - 계속 수신하여 Store 업데이트
+ * - 계속 수신하여 mission-status-store 업데이트
  */
-export function usePositionWebSocket() {
-  const positionStore = usePositionStore()
+export function useMissionWebSocket() {
+  const statusReportStore = useStatusReportStore()
   const isConnected = ref(false)
   
   // Backend URL 설정
@@ -27,30 +27,28 @@ export function usePositionWebSocket() {
   function connect() {
     service.connect(
       // eventName
-      'position',
+      'mission',
       // onMessage
-      (data: PositionMessage) => {
+      (data: MissionMessage) => {
         // 백엔드에서 보내는 메시지 형식:
-        // { type: 'position_update', tanks: [{ tank_id: '17TK-101', x: 150, y: 200 }, ...] }
-        if (data.type === 'position_update' && Array.isArray(data.tanks)) {
-          data.tanks.forEach(tank => {
-            positionStore.updateTankPosition(tank)
-          })
-          console.log(`위치 수신: ${data.tanks.length}개 탱크`)
+        // { type: 'mission_update', mission: 'attack' | 'search' | 'defence' }
+        if (data.type === 'mission_update' && data.mission) {
+          // mission-status-store의 공통 함수 사용 (한국어 변환 포함)
+          statusReportStore.setMissionFromBackend(data.mission)
+          console.log(`미션 수신: ${data.mission}`)
         }
       },
-      // onError
-      (error) => {
-        console.error('Position SocketIO 에러:', error)
-        isConnected.value = false
+      // onConnect
+      () => {
+        isConnected.value = true
+        console.log('Mission WebSocket 연결됨')
       },
       // onDisconnect
       () => {
         isConnected.value = false
+        console.log('Mission WebSocket 연결 끊김')
       }
     )
-    
-    isConnected.value = true
   }
   
   /**
@@ -64,7 +62,6 @@ export function usePositionWebSocket() {
   // 컴포넌트 마운트 시 자동 연결
   onMounted(() => {
     connect()
-    console.log('Position SocketIO 연결 시작')
   })
   
   // 컴포넌트 언마운트 시 자동 연결 해제

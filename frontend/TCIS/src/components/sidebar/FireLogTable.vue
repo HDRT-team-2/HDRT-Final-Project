@@ -4,6 +4,13 @@ import Badge from '@/components/common/Badge.vue'
 import type { FireEvent } from '@/types/fire'
 import { CLASS_NAME_KR } from '@/types/detection'
 
+// Props 정의
+interface Props {
+  fires: FireEvent[]
+}
+
+const props = defineProps<Props>()
+
 const columns = [
   { key: 'time', label: '시간', align: 'center' as const, width: '100px' },
   { key: 'ally', label: '아군', align: 'center' as const, width: '80px' },
@@ -36,7 +43,7 @@ const formatEnemy = (fire: any) => {
 <template>
   <BaseTable 
     :columns="columns" 
-    :data="[]"
+    :data="props.fires"
     :striped="false"
     :bordered="true"
     :hover="false"
@@ -60,9 +67,11 @@ const formatEnemy = (fire: any) => {
     <!-- 사격결과 컴럼 -->
     <template #result="{ row }">
       <Badge 
-        :text="row.result === 'hit' ? '명중' : '비명'"
+        v-if="row.result"
+        :text="row.result === 'hit' ? '명중' : '비명중'"
         :color="row.result === 'hit' ? 'success' : 'danger'"
       />
+      <span v-else class="text-gray-400 text-xs">대기중</span>
     </template>
     
     <!-- 빈 상태 -->
