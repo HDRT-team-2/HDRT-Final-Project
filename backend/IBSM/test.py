@@ -23,6 +23,7 @@ def write_log(message):
         f.write(f"{now} - {message}\n")
 
 write_log("로그 파일 생성 완료")
+
 # --------------------------------------------------------------------
 # info, get_action | Tank Turret Rotation Control
 global_QE_command, global_QE_weight, global_RF_command, global_RF_weight = "", 0.0, "", 0.0
@@ -237,7 +238,44 @@ class EnemyList:
         self.count += 1
         global_enemy_id += 1  # 새로운 적 발견 시 ID 증가
         write_log(f"🆕 새로운 적 발견! ID: {new_enemy.enemy_id}, 위치: ({pos_x:.1f}, {pos_y:.1f}, {pos_z:.1f})")
+        
+        # TCIS로 Enemy 데이터 전송
+        send_to_tcis('/internal/enemies', {
+            "type": "enemies_update",
+            "data": self.get_all_enemies()
+        })
+        
         return new_enemy
+
+# --------------------------------------------------------------------
+# TCIS 연동 함수 (Frontend Communication)
+# --------------------------------------------------------------------
+# TCIS는 Frontend와 WebSocket 통신을 담당하는 중계 서버입니다.
+# IBSM에서 데이터가 변경될 때마다 TCIS로 전송하여 실시간 업데이트를 제공합니다.
+
+TCIS_URL = "http://127.0.0.1:5001"
+
+def send_to_tcis(endpoint, data):
+    """
+    TCIS로 데이터 전송 (Fire & Forget)
+    
+    Args:
+        endpoint: TCIS 내부 엔드포인트 (/internal/enemies, /internal/allies, /internal/unknowns)
+        data: 전송할 JSON 데이터
+    
+    Note:
+        - 타임아웃 10ms, TCIS 오류 시에도 IBSM은 계속 작동
+        - TCIS 서버가 다운되어도 IBSM 동작에는 영향 없음
+    """
+    try:
+        requests.post(f"{TCIS_URL}{endpoint}", json=data, timeout=0.01)
+    except Exception as e:
+        # TCIS 오류 시에도 IBSM은 계속 작동 (로그 미출력)
+        pass
+
+# TCIS API 엔드포인트는 app 정의 이후에 선언 (하단 참조)
+
+# --------------------------------------------------------------------
 
 # Enemy List 전역 인스턴스
 enemy_list = EnemyList()
@@ -454,6 +492,13 @@ class AllyList:
         self.count += 1
         global_ally_id += 1
         write_log(f"🆕 새로운 아군 발견! ID: {new_ally.ally_id}, 위치: ({pos_x:.1f}, {pos_y:.1f}, {pos_z:.1f})")
+        
+        # TCIS로 Ally 데이터 전송
+        send_to_tcis('/internal/allies', {
+            "type": "allies_update",
+            "data": self.get_all_allies()
+        })
+        
         return new_ally
     
     def get_ally_position(self, ally_id):
@@ -657,6 +702,13 @@ class UnknownList:
         self.count += 1
         global_unknown_id += 1
         write_log(f"신규 객체 추가 | ID: {new_unknown.unknown_id}, 위치: ({pos_x:.1f}, {pos_y:.1f}, {pos_z:.1f})")
+        
+        # TCIS로 Unknown 데이터 전송
+        send_to_tcis('/internal/unknowns', {
+            "type": "unknowns_update",
+            "data": self.get_all_unknowns()
+        })
+        
         return new_unknown
     
     def remove_unknown(self, unknown_id):
@@ -1006,6 +1058,17 @@ def send_tpp(request_data=None):
 
 app = Flask(__name__)
 
+# TCIS 관련 API 엔드포인트
+@app.route('/api/battlefield-data', methods=['GET'])
+def get_battlefield_data():
+    """TCIS가 전장 데이터 조회 (Query API for TCIS)"""
+    return jsonify({
+        "enemies": enemy_list.get_all_enemies(),
+        "allies": ally_list.get_all_allies(),
+        "unknowns": unknown_list.get_all_unknowns(),
+        "timestamp": global_time
+    })
+# --------------------------------------------------------------------
 
 @app.route('/detect', methods=['POST'])
 def detect():
@@ -1602,6 +1665,85 @@ def start():
     write_log("🚀 /start command received")
     return jsonify({"control": ""})
 
+# --------------------------------------------------------------------
+# TCIS로 가짜 데이터 전송용 엔드포인트
+# --------------------------------------------------------------------
+@app.route('/test/send-fake-data', methods=['GET'])
+def send_fake_data():
+    """테스트용: 가짜 데이터를 TCIS로 전송"""
+    
+    # 가짜 적 데이터
+    fake_enemies = [
+        {
+            "enemy_id": 1,
+            "pos_x": 100.0,
+            "pos_y": 10.0,
+            "pos_z": 200.0,
+            "unit_type": "tank",
+            "status": "active",
+            "threat_level": 0.8
+        },
+        {
+            "enemy_id": 2,
+            "pos_x": 150.0,
+            "pos_y": 10.0,
+            "pos_z": 250.0,
+            "unit_type": "infantry",
+            "status": "active",
+            "threat_level": 0.5
+        }
+    ]
+    
+    # 가짜 아군 데이터
+    fake_allies = [
+        {
+            "ally_id": 1,
+            "pos_x": -50.0,
+            "pos_y": 10.0,
+            "pos_z": -100.0,
+            "unit_type": "tank",
+            "combat_status": "normal"
+        }
+    ]
+    
+    # 가짜 미식별 데이터
+    fake_unknowns = [
+        {
+            "unknown_id": 1,
+            "pos_x": 80.0,
+            "pos_y": 10.0,
+            "pos_z": 120.0
+        }
+    ]
+    
+    # TCIS로 전송
+    send_to_tcis('/internal/enemies', {
+        "type": "enemies_update",
+        "data": fake_enemies
+    })
+    
+    send_to_tcis('/internal/allies', {
+        "type": "allies_update",
+        "data": fake_allies
+    })
+    
+    send_to_tcis('/internal/unknowns', {
+        "type": "unknowns_update",
+        "data": fake_unknowns
+    })
+    
+    write_log("✅ 테스트 데이터 TCIS로 전송 완료")
+    
+    return jsonify({
+        "status": "success",
+        "message": "가짜 데이터 전송 완료",
+        "sent": {
+            "enemies": len(fake_enemies),
+            "allies": len(fake_allies),
+            "unknowns": len(fake_unknowns)
+        }
+    })
+
 # base64 문자열을 numpy array로 변환
 def decode_image(b64_string):
     if b64_string is None:
@@ -1611,5 +1753,98 @@ def decode_image(b64_string):
     img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
     return img
 
+# --------------------------------------------------------------------
+# TCIS 테스트용: 10초마다 자동으로 가짜 데이터 전송
+# --------------------------------------------------------------------
+def auto_send_fake_data():
+    """백그라운드에서 10초마다 가짜 데이터를 TCIS로 전송"""
+    time.sleep(5)  # 서버 시작 대기
+    
+    while True:
+        try:
+            # 가짜 탐지 데이터 (Frontend 형식: tracking_id, class_id, x, z, alive)
+            fake_detections = [
+                {
+                    "tracking_id": 1001,
+                    "class_id": 5,  # Tank1
+                    "x": 100.0 + (time.time() % 10),
+                    "z": 200.0,
+                    "alive": True
+                },
+                {
+                    "tracking_id": 1002,
+                    "class_id": 4,  # Human1
+                    "x": 150.0,
+                    "z": 250.0 + (time.time() % 10),
+                    "alive": True
+                },
+                {
+                    "tracking_id": 1003,
+                    "class_id": 5,  # Tank1
+                    "x": 80.0,
+                    "z": 120.0 + (time.time() % 5),
+                    "alive": True
+                }
+            ]
+            
+            # TCIS로 개별 객체 전송 (Frontend가 기대하는 형식)
+            for obj in fake_detections:
+                send_to_tcis('/internal/detection', obj)
+            
+            # 가짜 위치 데이터 (내 탱크 위치)
+            fake_position = {
+                "tanks": [
+                    {
+                        "tank_id": "17TK-101",
+                        "x": -50.0 + (time.time() % 5),
+                        "y": -100.0
+                    }
+                ]
+            }
+            send_to_tcis('/internal/position', fake_position)
+            
+            # 가짜 발포 이벤트 (발사)
+            fake_fire_event = {
+                "type": "fire_event",
+                "fire": {
+                    "target_tracking_id": 1001,
+                    "ally_id": "17TK-101",
+                    "class_id": 5
+                }
+            }
+            send_to_tcis('/internal/fire', fake_fire_event)
+            
+            # 가짜 명중 결과 (hit or miss)
+            fire_results = ['hit', 'miss']
+            fake_hit_result = {
+                "type": "hit_result",
+                "data": {
+                    "target_tracking_id": 1001,
+                    "result": fire_results[int(time.time() / 10) % 2]  # 10초마다 hit/miss 교체
+                }
+            }
+            send_to_tcis('/internal/fire', fake_hit_result)
+            
+            # 가짜 미션 데이터
+            missions = ['attack', 'search', 'defence']
+            fake_mission = {
+                "mission": missions[int(time.time() / 30) % 3]  # 30초마다 변경
+            }
+            send_to_tcis('/internal/mission', fake_mission)
+            
+            write_log(f"🔄 자동 테스트 데이터 TCIS로 전송: detection={len(fake_detections)}개, position/fire(2)/mission")
+            
+        except Exception as e: 
+            write_log(f"자동 전송 오류: {e}")
+        
+        time.sleep(10)  # 10초 대기
+
+# --------------------------------------------------------------------
+
 if __name__ == '__main__':
+    # 백그라운드 스레드로 자동 데이터 전송 시작
+    auto_thread = threading.Thread(target=auto_send_fake_data, daemon=True)
+    auto_thread.start()
+    write_log("자동 테스트 데이터 전송 스레드 시작")
+    
     app.run(host='0.0.0.0', port=5000)
