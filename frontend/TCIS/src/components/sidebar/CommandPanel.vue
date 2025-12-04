@@ -4,7 +4,6 @@ import Card from '@/components/common/Card.vue'
 import CommandHeader from '@/components/commandPanel/CommandHeader.vue';
 import CommandHistory from '@/components/commandPanel/CommandHistory.vue';
 import CommandInput from '@/components/commandPanel/CommandInput.vue';
-import { useChatCommand } from '@/composables/useChatCommand';
 import { useTargetCommand } from '@/composables/useTargetCommand';
 
 interface CommandEntry {
