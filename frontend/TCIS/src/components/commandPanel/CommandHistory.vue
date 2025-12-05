@@ -47,12 +47,12 @@ watch(() => props.history.length, () => {
   <div 
     v-for="entry in history"
     :key="entry.id"
-    class="rounded px-2 py-1 text-xs font-mono"
+    class="rounded px-2 py-1 text-xs font-mono mb-1"
     :class="getCommandStyle(entry.type)"
   >
     <div class="flex flex-row items-start gap-2">
       <span class="font-semibold mr-1 self-start min-w-[16px] text-center">
-        {{ entry.type === 'input' ? '>' : entry.type === 'error' ? '!' : '<' }}
+        {{ entry.type === 'input' ? '<' : entry.type === 'error' ? '!' : '>' }}
       </span>
       <div class="flex-1 min-w-0">
         <div class="flex justify-between items-baseline mb-1">

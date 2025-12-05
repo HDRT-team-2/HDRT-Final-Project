@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import Card from '@/components/common/Card.vue'
-import CommandHeader from '@/components/commandPanel/CommandHeader.vue';
 import CommandHistory from '@/components/commandPanel/CommandHistory.vue';
 import CommandInput from '@/components/commandPanel/CommandInput.vue';
+import { parseCommandWithLLM } from '@/services/llm-service';
 import { useTargetCommand } from '@/composables/useTargetCommand';
+import { useStatusReportStore } from '@/stores/mission-status-store';
 
 interface CommandEntry {
   id: number;
@@ -19,11 +20,22 @@ const commandHistory = ref<CommandEntry[]>([
 
 let commandIdCounter = 2;
 
-// Chat Command Composable 사용 (Frontend LLM)
-const { sendChatMessage, isSending } = useChatCommand();
 const { sendTarget } = useTargetCommand();
+const statusReportStore = useStatusReportStore();
 
-// 명령어 입력 처리
+// 히스토리 컨테이너 ref
+const historyContainer = ref<HTMLElement | null>(null);
+
+// 스크롤을 맨 아래로 이동
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (historyContainer.value) {
+      historyContainer.value.scrollTop = historyContainer.value.scrollHeight;
+    }
+  });
+};
+
+// 명령어 입력 처리 (Frontend LLM 사용)
 const handleCommandSubmit = async (command: string) => { 
   const now = new Date();
   const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
@@ -35,11 +47,12 @@ const handleCommandSubmit = async (command: string) => {
     timestamp,
     type: 'input'
   });
+  scrollToBottom();
 
-  // Frontend LLM으로 분석
-  const result = await sendChatMessage(command);
-  
-  if (result) {
+  try {
+    // LLM으로 명령어 분석
+    const result = await parseCommandWithLLM(command);
+    
     // LLM 응답 추가
     commandHistory.value.push({
       id: commandIdCounter++,
@@ -47,13 +60,19 @@ const handleCommandSubmit = async (command: string) => {
       timestamp,
       type: result.type === 'error' ? 'error' : 'output'
     });
+    scrollToBottom();
 
-    // command 타입이면 backend로 target 전송
+    // command 타입이면 좌표를 store에 저장하고 backend로 전송
     if (result.type === 'command' && result.x !== undefined && result.y !== undefined) {
+      // Store에 목표 좌표 저장
+      statusReportStore.setCommandTarget(result.x, result.y);
+      
+      // Backend로 전송
       await sendTarget();
-      console.log(`[CommandPanel] Target 전송 완료: (${result.x}, ${result.y})`)
+      
+      console.log(`[CommandPanel] Target 전송 완료: (${result.x}, ${result.y}), action: ${result.action}`);
     }
-  } else {
+  } catch (error) {
     // 에러 처리
     commandHistory.value.push({
       id: commandIdCounter++,
@@ -61,6 +80,8 @@ const handleCommandSubmit = async (command: string) => {
       timestamp,
       type: 'error'
     });
+    scrollToBottom();
+    console.error('[CommandPanel] LLM 처리 오류:', error);
   }
 };
 </script>
@@ -69,7 +90,7 @@ const handleCommandSubmit = async (command: string) => {
   <Card title="지휘 보조 시스템">
     <div class="flex flex-col h-full overflow-hidden">
         <!-- 명령어 히스토리 -->
-        <div class="flex-1 overflow-auto min-h-0">
+        <div ref="historyContainer" class="flex-1 overflow-auto min-h-0">
           <CommandHistory :history="commandHistory" />
         </div>
         
