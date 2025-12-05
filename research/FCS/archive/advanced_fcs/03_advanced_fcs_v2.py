@@ -45,6 +45,7 @@ cached_move_x = None        # 캐싱된 이동 목표 X
 cached_move_y = None        # 캐싱된 이동 목표 Y 
 cached_move_z = None        # 캐싱된 이동 목표 Z
 
+FIRE_RANGE_FACTOR = 1.0     # 최대 사거리의 80% 지점까지만 실제 운용 사거리로 이용함. 
 
 ########################### 스태빌라이저 기능 #############################
 def normalize_angle_deg(angle: float) -> float:
@@ -103,7 +104,7 @@ class SimpleTurretStabilizer:
         self.PITCH_DEADBAND = 0.1
 
         # ===================================================
-        self.MAX_QE         = 1.0   # 모터 최대 출력 제한
+        self.MAX_QE         = 3.0   # 모터 최대 출력 제한
         self.MIN_QE_OUTPUT  = 0.01  # 모터 최소 출력 (이것보다 작으면 무시)
         self.MAX_PWR = 1.0
 
@@ -448,7 +449,7 @@ def fcs_function(request_data : dict):
     dx = enemy_pos_x - my_pos_x
     dz = enemy_pos_z - my_pos_z
     horizontal_distance = math.hypot(dx, dz)    # 수평거리 계산
-    height_diff = enemy_pos_y - my_pos_y        # 고저차
+    height_diff = enemy_alt - my_alt        # 고저차
 
     # 계산 2. 탄도해 계산
     elevation_angle = None
@@ -501,9 +502,9 @@ def fcs_function(request_data : dict):
     theta_rad = math.radians(theta_deg)
     range_10deg = (muzzle_velocity ** 2) * math.sin(2.0 * theta_rad) / G    # 포물선 최대 사거리 공식: R = v² * sin(2θ) / g 사용
     print(f"발사각 10도 기준 이론 사거리: {range_10deg:.2f} m")
-
-    FIRE_RANGE_FACTOR = 0.8     # 최대 사거리의 80% 지점까지만 실제 운용 사거리로 이용함.
+  
     MAX_FIRE_RANGE = range_10deg * FIRE_RANGE_FACTOR
+    print('MAX_FIRE_RANGE',MAX_FIRE_RANGE)
 
     # Topview 기준 적을 중심으로 반지름 MAX_FIRE_RANGE인 원 안(최대 사거리) 안에 내가 있으면 사거리 안.
     in_range = (horizontal_distance <= MAX_FIRE_RANGE)
@@ -525,16 +526,17 @@ def fcs_function(request_data : dict):
     can_fire_now = has_solution and elev_ok and yaw_aligned and pitch_aligned and in_range
 
     # 이동해야 할 위치 계산 후, x,y 좌표를 반환하는 계산기 매서드 (적 전차 방향으로 사정거리만큼 접근)
-    def get_move_position(my_x, my_z, enemy_x, enemy_z, move_distance):
+    def get_move_position(my_x, my_y, enemy_x, enemy_y, move_distance):
         dx = enemy_x - my_x
-        dz = enemy_z - my_z
-        total_distance = math.hypot(dx, dz)
+        dy = enemy_y - my_y
+        total_distance = math.hypot(dx, dy)
         if total_distance == 0.0:                   # 내s가 적 좌표와 같은 x,z에 있을 경우, 0으로 나누는것 방지용
-            return my_x, my_z                       # 그냥 원래 x, z좌표 반환
+            return my_x, my_y                       # 그냥 원래 x, y좌표 반환
         ratio = (total_distance - move_distance) / total_distance   # 전체 거리 중 필요한 거리 만큼만 적 방향으로 이동
         new_x = my_x + dx * ratio
-        new_z = my_z + dz * ratio
-        return new_x, new_z                         # 새로 가야할 x좌표, z좌표를 반환
+        new_y = my_y + dy * ratio
+        new_z = altitude_calculator(new_x, new_y)
+        return new_x, new_y, new_z                   # 새로 가야할 x좌표, y좌표, z좌표를 반환
 
     need_move_for_range = not in_range  # 사격 가능범위(Topview 기준, 적을 중심점으로, 사거리를 반지름으로 하는 원 밖)이면 이동 필요
     need_move_for_elev = not elev_ok  # 고각 제한 밖이면 위치를 바꿀 필요가 있다고 가정
@@ -570,12 +572,11 @@ def fcs_function(request_data : dict):
         if use_cached_data:
             # 저장해뒀던 X, Y(h), Z 모두 재사용
             move_x = cached_move_x
-            h      = cached_move_y  # 저장해둔 높이값 불러오기
+            move_y = cached_move_y  # 저장해둔 높이값 불러오기
             move_z = cached_move_z
             
         else:
-            move_x, move_z = get_move_position(my_pos_x, my_pos_z, enemy_pos_x, enemy_pos_z, MAX_FIRE_RANGE)
-            h = altitude_calculator(move_x, move_z) # 높이 계산
+            move_x, move_y, move_z = get_move_position(my_pos_x, my_pos_z, enemy_pos_x, enemy_pos_z, MAX_FIRE_RANGE)
             
             # 적 좌표(Y포함)와 결과값(h포함) 저장
             prev_enemy_x = enemy_pos_x
@@ -583,12 +584,12 @@ def fcs_function(request_data : dict):
             prev_enemy_z = enemy_pos_z
             
             cached_move_x = move_x
-            cached_move_y = h           # 계산된 높이 저장
+            cached_move_y = move_y      # 계산된 높이 저장
             cached_move_z = move_z
 
         new_fire_point = {
             "x": move_x,
-            "y": h,
+            "y": move_y,
             "z": move_z
         }
         print("즉시 불가. 이동 추천 좌표:", new_fire_point)

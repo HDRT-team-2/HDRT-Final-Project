@@ -1,4 +1,4 @@
-x,y,occupancy_status,z
+x,z,occupancy_status,y
 0,0,0,7.0
 0,203,0,2.15
 0,202,0,2.1
