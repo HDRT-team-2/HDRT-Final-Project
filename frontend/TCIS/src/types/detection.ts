@@ -13,10 +13,12 @@ export enum ObjectClassId {
   Mine1 = 8,
   Wall2 = 9,
   Wall2X10 = 10,
+  Tank2 = 11,
+  Human2 = 12
 }
 
 //객체 클래스 이름
-export type ObjectClassName = 'tank' | 'car' | 'truck' | 'other' | 'human' | 'rock_small' | 'rock_large' | 'mine' | 'wall'
+export type ObjectClassName = 'tank' | 'tank_around' | 'car' | 'truck' | 'other' | 'human' | 'human_around' | 'rock_small' | 'rock_large' | 'mine' | 'wall'
 
 //클래스 ID → 이름 매핑
 export const CLASS_ID_TO_NAME: Record<number, ObjectClassName> = {
@@ -31,6 +33,8 @@ export const CLASS_ID_TO_NAME: Record<number, ObjectClassName> = {
   [ObjectClassId.Mine1]: 'mine',
   [ObjectClassId.Wall2]: 'wall',
   [ObjectClassId.Wall2X10]: 'wall',
+  [ObjectClassId.Tank2]: 'tank_around',
+  [ObjectClassId.Human2]: 'human_around'
 }
 
 //클래스 이름 한글
@@ -44,7 +48,9 @@ export const CLASS_NAME_KR: Record<ObjectClassName, string> = {
   rock_small: '작은 바위',
   rock_large: '큰 바위',
   mine: '지뢰',
-  wall: '벽'
+  wall: '벽',
+  tank_around: '주변 전차',
+  human_around: '주변 보병'
 }
 
 // 프론트에서 사용할 형태
