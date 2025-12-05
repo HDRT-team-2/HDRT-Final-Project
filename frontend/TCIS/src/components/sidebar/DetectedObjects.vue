@@ -43,8 +43,9 @@ const otherItems = computed(() => [
         class="flex-1"
       />
       
-      <!-- 아군 -->
+      <!-- 아군 (객체가 있을 때만 표시) -->
       <ObjectsList
+        v-if="allyCount > 0"
         title="아군"
         :count="allyCount"
         bg-color="bg-rotem-50"
@@ -55,8 +56,9 @@ const otherItems = computed(() => [
         class="flex-1"
       />
       
-      <!-- 기타 -->
+      <!-- 기타 (객체가 있을 때만 표시) -->
       <ObjectsList
+        v-if="otherCount > 0"
         title="기타"
         :count="otherCount"
         bg-color="bg-success-50"

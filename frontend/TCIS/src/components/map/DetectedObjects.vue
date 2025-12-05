@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { DetectedObject } from '@/types/detection'
 import EnemyIcon from '@/components/icons/EnemyIcon.vue'
+import EnemyAroundIcon from '@/components/icons/EnemyAroundIcon.vue'
 import CarIcon from '@/components/icons/CarIcon.vue'
 import PersonIcon from '@/components/icons/PersonIcon.vue'
+import PersonAroundIcon from '@/components/icons/PersonAroundIcon.vue'
 import RockIcon from '@/components/icons/RockIcon.vue'
 import MineIcon from '@/components/icons/MineIcon.vue'
 
@@ -25,9 +27,25 @@ defineProps<Props>()
       :size="20"
     />
 
+    <!-- 적 전차 (주변) -->
+    <EnemyAroundIcon 
+      v-else-if="obj.class_name === 'tank_around'"
+      :x="coordToSvg(obj.position.x, obj.position.y).x"
+      :y="coordToSvg(obj.position.x, obj.position.y).y"
+      :size="50"
+    />
+
     <!-- 적 보병 -->
     <PersonIcon 
       v-else-if="obj.class_name === 'human'"
+      :x="coordToSvg(obj.position.x, obj.position.y).x"
+      :y="coordToSvg(obj.position.x, obj.position.y).y"
+      :size="8"
+    />
+
+    <!-- 적 보병 (주변) -->
+    <PersonAroundIcon 
+      v-else-if="obj.class_name === 'human_around'"
       :x="coordToSvg(obj.position.x, obj.position.y).x"
       :y="coordToSvg(obj.position.x, obj.position.y).y"
       :size="8"
