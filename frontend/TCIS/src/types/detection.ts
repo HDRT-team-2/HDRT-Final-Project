@@ -75,6 +75,12 @@ export interface DetectionResponse {
 // 백엔드에서 오는 Detection 메시지 타입
 export interface DetectionMessage {
   type: 'detection_update'
+  objects: DetectionResponse[] // 리스트 형식
+}
+
+// 이전 형식 호환용 (단일 객체)
+export interface DetectionMessageSingle {
+  type: 'detection_update'
   object: DetectionResponse
 }
 

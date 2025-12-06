@@ -121,6 +121,20 @@ export const useDetectionStore = defineStore('detection', () => {
       console.log(`새 객체 발견 [${data.tracking_id}]:`, newObj.class_name, newObj.position)
     }
   }
+
+  /**
+   * 여러 탐지 객체를 배치로 업데이트
+   * - 배열로 받아서 각 객체를 updateObject로 처리
+   */
+  function updateObjects(dataList: DetectionResponse[]) {
+    if (!Array.isArray(dataList)) {
+      console.warn('updateObjects: 배열이 아닌 데이터를 받았습니다', dataList)
+      return
+    }
+    
+    console.log(`배치 업데이트: ${dataList.length}개 객체`)
+    dataList.forEach(data => updateObject(data))
+  }
   
   /**
    * 전체 초기화
@@ -157,6 +171,7 @@ export const useDetectionStore = defineStore('detection', () => {
     
     // Actions
     updateObject,
+    updateObjects,
     clearObjects,
     reset
   }

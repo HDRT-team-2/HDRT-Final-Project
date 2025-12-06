@@ -6,9 +6,9 @@ import type { BackendMissionType } from '@/types/position'
 // 백엔드 미션을 한국어로 변환
 function translateMission(backendMission: BackendMissionType): OperationMission {
   const missionMap: Record<BackendMissionType, OperationMission> = {
-    'attack': '공격',
+    'combat': '공격',
     'search': '수색',
-    'defence': '방어'
+    'defense': '방어'
   }
   return missionMap[backendMission]
 }
