@@ -1255,12 +1255,12 @@ def update_bullet():
 def init():
     config = {
         "startMode": "start",  # Options: "start" or "pause"
-        "blStartX": 62.71,  #Blue Start Position
-        "blStartY": 9.7,
-        "blStartZ": 120.1,
-        "rdStartX": 17.21, #Red Start Position
-        "rdStartY": 9.2,
-        "rdStartZ": 167,
+        "blStartX": 74.1379,  #Blue Start Position
+        "blStartY": 10,
+        "blStartZ": 85.9834,
+        "rdStartX": 94.7, #Red Start Position
+        "rdStartY": 16,
+        "rdStartZ": 156.0,
         "trackingMode": True,
         "detectMode": False,
         "logMode": True,

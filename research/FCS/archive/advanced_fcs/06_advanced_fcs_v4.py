@@ -45,6 +45,9 @@ altitude_df = None              # Pandas DataFrame 형태의 고도 데이터
 altitude_grid = None            # Numpy 2D 배열 형태의 고도 그리드 (검색 속도 최적화)
 altitude_grid_shape = None      # 그리드 크기 (Max Z, Max X)
 
+# 사격 기록 시간 저장을 위한 전역변수
+last_shoot_log_time = None
+
 ########################### 스태빌라이저 기능 #############################
 def normalize_angle_deg(angle: float) -> float:
     """
@@ -479,7 +482,7 @@ def check_trajectory_collision(elevation_angle : float,                    # 발
 
         # 궤적 y (포신 높이 기준)
         # 여기서 ally_pos["y"]는 "포구 위치"에 더 가깝게 바꿔주는게 베스트
-        y_traj = (ally_body_pos["y"]                                       # 포구의 기본 높이에서 시작해서
+        y_traj = (ally_body_pos["y"] + 0.2                                    # 포구의 기본 높이에서 시작해서
                   + s * tan                                                # s만큼 전진하며 고각에 따른 상승량을 더하고
                   - (G * s**2) / (2 * muzzle_velocity**2 * cos2))          # 포물선 운동 공식에 따라 중력 때문에 떨어지는 양을 빼줌
 
@@ -541,6 +544,54 @@ def compute_pitch_tolerance_deg(distance_m: float) -> float:               # 수
 
     return max(1.0, allowed_angle_deg)                                     # 허용 각도가 너무 작게 나오면 최소 1도는 보장해서 반환
 
+# 사격 시각화를 위한 사격 기록 저장 매서드
+def shooting_record(map_type, ally_body_pos, ibsm_target, elevation_angle):
+    """
+    사격이 실제로 이루어졌을 때 호출되는 기록 함수.
+
+    - shooting_record_YYYYMMDD_HHMMSS.txt 파일을 생성하고,
+      그 안에 map_type / 아군 위치 / 적 위치 / 발사 고각을
+      텍스트 로그 형식(key=value)으로 기록한다.
+    """
+    try:
+        # 안전한 형 변환
+        mt = int(map_type)
+
+        ally_x = float(ally_body_pos.get("x", 0.0))
+        ally_y = float(ally_body_pos.get("y", 0.0))
+        ally_z = float(ally_body_pos.get("z", 0.0))
+
+        tgt_x = float(ibsm_target.get("x", 0.0))
+        tgt_y = float(ibsm_target.get("y", 0.0))
+        tgt_z = float(ibsm_target.get("z", 0.0))
+
+        elev = float(elevation_angle) if elevation_angle is not None else 0.0
+
+        # 타임스탬프 & 파일명
+        now = datetime.now()
+        ts_str = now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]  # 밀리초 3자리
+        fname = "shooting_record_" + now.strftime("%Y%m%d_%H%M%S") + ".txt"
+
+        # 텍스트 로그 작성
+        with open(fname, "w", encoding="utf-8") as f:
+            f.write(f"timestamp={ts_str}\n")
+            f.write(f"map_type={mt}\n")
+            f.write("\n")
+            f.write(f"ally_x={ally_x}\n")
+            f.write(f"ally_y={ally_y}\n")
+            f.write(f"ally_z={ally_z}\n")
+            f.write("\n")
+            f.write(f"target_x={tgt_x}\n")
+            f.write(f"target_y={tgt_y}\n")
+            f.write(f"target_z={tgt_z}\n")
+            f.write("\n")
+            f.write(f"elevation_angle_deg={elev}\n")
+
+        write_log(f"shooting_record: 사격 기록 파일 저장 완료 -> {fname}")
+
+    except Exception as e:
+        write_log(f"shooting_record 실행 중 오류: {e}")
+
 # FCS 기능 메인
 def fcs_function(request_data):                                            # IBSM에서 들어온 request_data를 받아, FCS 전체 로직을 실행하는 메인 함수 정의
     global rf_command, rf_weight, fire_command, fire_target, new_fire_point# 함수를 나오더라도 사용할 전역 변수들을 global로 선언
@@ -598,7 +649,7 @@ def fcs_function(request_data):                                            # IBS
     dz = ibsm_target['z'] - ally_body_pos['z']                             # 아군과 적의 z좌표 차이
     horizontal_distance = math.sqrt(dx**2 + dz**2)                         # 피타고라스로 수평 거리 계산
 
-    height_diff = ibsm_target['y'] - ally_body_pos['y']  # y축이 고도        # 적과 아군의 고도 차이(적 - 아군)를 계산
+    height_diff = ibsm_target['y'] - ally_body_pos['y'] + 0.2  # y축이 고도        # 적과 아군의 고도 차이(적 - 아군)를 계산
     write_log(f"수평 거리: {horizontal_distance:.2f}m, 고저차(적 - 아군): {height_diff:.2f}m") # 수평 거리와 고저차를 로그에 기록
 
     # ---------------- 2. 발사 고각 계산 ----------------
@@ -616,7 +667,7 @@ def fcs_function(request_data):                                            # IBS
     # ---------------- 3. 포탑 수직 각도 제한 (피치 기반으로 수정) ----------------
     # 차체 로컬 기준 포탑 수직 가동 범위: -5도(하강) ~ +10도(상승)
     GUN_MIN_LOCAL = -10.0 # 차체 로컬 기준 최대 하강                       # 포신이 로컬 기준으로 얼마나 아래까지 내릴 수 있는지 (최소 각도)
-    GUN_MAX_LOCAL = +10.0 # 차체 로컬 기준 최대 상승                       # 포신이 로컬 기준으로 얼마나 위로 올릴 수 있는지 (최대 각도)
+    GUN_MAX_LOCAL = +13.0 # 차체 로컬 기준 최대 상승                       # 포신이 로컬 기준으로 얼마나 위로 올릴 수 있는지 (최대 각도)
 
     # 월드 기준에서의 허용 범위 = 차체 피치 + 로컬 가동 범위
     turret_min_angle_world = body_pitch + GUN_MIN_LOCAL                    # 차체 피치를 고려한 월드 기준 최소 포탑 수직각
@@ -636,8 +687,7 @@ def fcs_function(request_data):                                            # IBS
     if elevation_world is not None:                                        # 발사 고각을 구했을 때에만 탄도와 가동 범위를 검사
         # 내가 쏴야 하는 발사각(elevation_world)은 월드 기준.
         # 기구는 차체 기준이니, "포신 로컬 피치"로 환산해서 그 범위 안에 들어가는지 확인.
-        required_pitch_local = normalize_angle_deg_180(                    # 실제 기구(포신)가 필요로 하는 로컬 기준 피치각 = 발사각 - 차체 피치
-            elevation_world - body_pitch)
+        required_pitch_local = normalize_angle_deg_180(elevation_world - body_pitch) # 실제 기구(포신)가 필요로 하는 로컬 기준 피치각 = 발사각 - 차체 피치
 
         write_log(
             f"필요 포신 로컬 피치: {required_pitch_local:.2f}도 "          # 필요 로컬 피치가 얼마인지
@@ -649,12 +699,12 @@ def fcs_function(request_data):                                            # IBS
 
         if GUN_MIN_LOCAL <= required_pitch_local <= GUN_MAX_LOCAL:         # 필요 로컬 피치가 포탑 가동 범위 안에 들어가면
             write_log(
-                f"필요 로컬 피치({required_pitch_local:.2f}도)가 "         # 이 각도가 범위 안이라서
-                f"포탑 수직 가동 범위 내에 있음. 조준 및 사격을 시도합니다." # 실제로 조준/사격 시도를 해보겠다고 로그에 남김
+                f"필요 로컬 피치({required_pitch_local:.2f}도)가 "           # 이 각도가 범위 안이라서
+                f"포탑 수직 가동 범위 내에 있음. 조준 및 사격을 시도합니다."      # 실제로 조준/사격 시도를 해보겠다고 로그에 남김
             )
 
-            clear_terrain = check_trajectory_collision(                    # 앞에서 만든 check_trajectory_collision 함수로
-                elevation_world, ally_body_pos, ibsm_target)               # 이 각도, 현재 위치, 목표 위치를 넣고 지형 충돌 여부를 검사
+            clear_terrain = check_trajectory_collision(elevation_world, ally_body_pos, ibsm_target) #지형 충돌 여부를 검사
+            
             if clear_terrain == False:                                     # 결과가 False라면 (중간에 언덕에 막힌다면)
                 write_log("탄도 궤적이 지형에 막힙니다. 사격을 중지하고 새로운 사격 위치를 계산합니다.") # 사격 중지 및 새로운 위치 탐색 로그
                 new_fire_point = find_new_fire_point(                      # 위에서 만든 find_new_fire_point로
@@ -692,7 +742,8 @@ def fcs_function(request_data):                                            # IBS
                 if abs(y_angle_diff) < pitch_tolerance:                    # 수직 오차도 허용 범위 안이라면
                     fire_command = True                                    # 사격 플래그를 True로 바꾸고
                     fire_target = ibsm_target                              # 사격 목표를 현재 적 좌표로 설정
-                    write_log("사격 조건 충족! 발사 명령 전송")             # 사격 조건이 되었다는 로그 남김
+                    write_log("사격 조건 충족! 발사 명령 전송")                # 사격 조건이 되었다는 로그 남김
+                    shooting_record(map_type, ally_body_pos, ibsm_target, elevation_angle)
             else:                                                          # 수평 오차가 허용 범위를 벗어나면
                 fire_command = False                                       # 사격 명령은 False(발사하지 않음)
                 write_log(
