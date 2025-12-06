@@ -26,7 +26,7 @@ export function useTargetCommand() {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
       const api = new ApiService({ baseURL: API_URL })
       
-      // 요청: 프론트 MissionType ('defend' | 'attack_n_search')
+      // 요청: 프론트 MissionType ('defense' | 'combat')
       // 응답: 백엔드 BackendMissionType ('combat' | 'search' | 'defense')
       const res = await api.post<{ x: number; y: number; mission: BackendMissionType }>('/api/target', {
         x: target.x,

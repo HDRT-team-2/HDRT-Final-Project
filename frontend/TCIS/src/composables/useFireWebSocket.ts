@@ -36,7 +36,7 @@ export function useFireWebSocket() {
           fireStore.addFire({
             target_tracking_id: fireData.fire.target_tracking_id,
             ally_id: fireData.fire.ally_id,
-            class_id: fireData.fire.class_id
+            // class_id: fireData.fire.class_id
           })
           console.log(`발사 수신: 아군 [${fireData.fire.ally_id}] → 대상 [${fireData.fire.target_tracking_id}]`)
         }

@@ -36,7 +36,7 @@ export function usePositionWebSocket() {
           data.tanks.forEach(tank => {
             positionStore.updateTankPosition(tank)
           })
-          console.log(`위치 수신: ${data.tanks.length}개 탱크`)
+          // console.log(`위치 수신: ${data.tanks.length}개 탱크`)
         }
       },
       // onConnect

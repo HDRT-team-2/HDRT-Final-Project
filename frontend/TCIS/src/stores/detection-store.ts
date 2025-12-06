@@ -89,7 +89,7 @@ export const useDetectionStore = defineStore('detection', () => {
       class_name,
       position: {
         x: data.x,
-        y: data.z
+        y: data.y
       },
       time: new Date(),
       alive: data.alive
@@ -109,7 +109,7 @@ export const useDetectionStore = defineStore('detection', () => {
     if (existing) {
       // 기존 객체 위치 업데이트
       existing.position.x = data.x
-      existing.position.y = data.z
+      existing.position.y = data.y
       existing.alive = data.alive
       
       console.log(`객체 업데이트 [${data.tracking_id}]:`, existing.class_name, existing.position)

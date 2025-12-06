@@ -6,15 +6,15 @@ export enum ObjectClassId {
   Car2 = 1,
   Car3 = 2,
   Car4 = 3,
-  Human1 = 4,
-  Tank1 = 5,
+  Human1 = 4, //명확하게 인식된 보병
+  Tank1 = 5, //명확하게 인식된 전차
   Rock1 = 6,
   Rock2 = 7,
   Mine1 = 8,
   Wall2 = 9,
   Wall2X10 = 10,
-  Tank2 = 11,
-  Human2 = 12
+  Tank2 = 11, //주변에 전차가 있는 경우
+  Human2 = 12 //주변에 보병이 있는 경우
 }
 
 //객체 클래스 이름
@@ -44,7 +44,7 @@ export const CLASS_NAME_KR: Record<ObjectClassName, string> = {
   tank: '전차',
   car: '차량',
   truck: '트럭',
-  other: '기타',
+  other: '장애물',
   rock_small: '작은 바위',
   rock_large: '큰 바위',
   mine: '지뢰',
@@ -68,7 +68,7 @@ export interface DetectionResponse {
     tracking_id: number
     class_id: number
     x: number
-    z: number,
+    y: number
     alive: boolean,
 }
 

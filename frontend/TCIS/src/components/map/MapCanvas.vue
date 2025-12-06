@@ -93,7 +93,7 @@ function handleContextMenu(event: MouseEvent) {
   const coord = svgToCoord(svgX, svgY)
   
   // 'a'키 눌린 상태에 따라 mission 결정
-  const mission = isAKeyPressed.value ? 'attack_n_search' : 'defend'
+  const mission = isAKeyPressed.value ? 'combat' : 'defense'
   
   // mission-status store에 명령 target 설정
   statusReportStore.setCommandTarget(coord.x, coord.y, mission)
@@ -147,7 +147,7 @@ function handleContextMenu(event: MouseEvent) {
       :x="coordToSvg(target.x, target.y).x"
       :y="coordToSvg(target.x, target.y).y"
       :size="8"
-      :is-danger="commandTarget?.mission === 'attack_n_search'"
+      :is-danger="commandTarget?.mission === 'combat'"
     />
     
     <!-- 탐지된 객체들 -->

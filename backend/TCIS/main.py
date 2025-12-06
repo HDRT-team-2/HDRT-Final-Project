@@ -146,7 +146,7 @@ def receive_mission():
     
     socketio.emit('mission', {
         "type": "mission_update",
-        "mission": data.get('mission', 'defend')
+        "mission": data.get('mission', 'defence')
     })
     
     print(f"[Mission] 미션 수신: {data.get('mission')}")
@@ -191,12 +191,12 @@ def set_target():
     {
         "x": 100.5,
         "z": 200.3,
-        "mission": "attack_n_search"  # 'defend' | 'attack_n_search'
+        "mission": "combat"  # 'defense' | 'combat'
     }
     
     IBSM으로 전달해야 하는 형식 (구현 해야함):
     POST http://127.0.0.1:5000/api/set-target
-    { "x": 100.5, "z": 200.3, "mission": "attack_n_search" }
+    { "x": 100.5, "z": 200.3, "mission": "combat" }
     """
     data = request.get_json()
     

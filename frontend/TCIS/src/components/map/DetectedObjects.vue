@@ -69,7 +69,7 @@ defineProps<Props>()
 
     <!-- 큰 바위 -->
     <RockIcon 
-      v-else-if="obj.class_name === 'rock_large'"
+      v-else-if="obj.class_name === 'rock_large' || obj.class_name === 'other'"
       :x="coordToSvg(obj.position.x, obj.position.y).x"
       :y="coordToSvg(obj.position.x, obj.position.y).y"
       :size="20"

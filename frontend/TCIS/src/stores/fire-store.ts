@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { FireEvent, FireResponse, FireResult } from '@/types/fire'
-import { CLASS_ID_TO_NAME } from '@/types/detection'
+import { useDetectionStore } from './detection-store'
 
 export const useFireStore = defineStore('fire', () => {
   // State-----------------------------------------
@@ -13,8 +13,14 @@ export const useFireStore = defineStore('fire', () => {
   
   // 발포 이벤트 추가
   function addFire(data: FireResponse) {
-    // class_id를 class_name으로 변환
-    const target_class_name = CLASS_ID_TO_NAME[data.class_id] || 'other'
+    // detection-store에서 target_tracking_id로 객체 찾기
+    const detectionStore = useDetectionStore()
+    const targetObject = detectionStore.objects.find(
+      obj => obj.tracking_id === data.target_tracking_id
+    )
+    
+    // 찾은 객체의 class_name 사용, 없으면 'other'
+    const target_class_name = targetObject?.class_name || 'other'
     
     const newFire: FireEvent = {
       id: `fire-${data.target_tracking_id}-${Date.now()}`,
