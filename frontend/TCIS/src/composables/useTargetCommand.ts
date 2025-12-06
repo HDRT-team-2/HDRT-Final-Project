@@ -27,7 +27,7 @@ export function useTargetCommand() {
       const api = new ApiService({ baseURL: API_URL })
       
       // 요청: 프론트 MissionType ('defend' | 'attack_n_search')
-      // 응답: 백엔드 BackendMissionType ('attack' | 'search' | 'defence')
+      // 응답: 백엔드 BackendMissionType ('combat' | 'search' | 'defense')
       const res = await api.post<{ x: number; y: number; mission: BackendMissionType }>('/api/target', {
         x: target.x,
         z: target.y,

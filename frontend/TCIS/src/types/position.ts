@@ -8,7 +8,7 @@ export interface Coordinate {
 export type MissionType = 'defend' | 'attack_n_search'
 
 // 백엔드 응답 미션 타입
-export type BackendMissionType = 'attack' | 'search' | 'defence'
+export type BackendMissionType = 'combat' | 'search' | 'defense'
 
 // 목표 위치를 나타내는 인터페이스
 export interface TargetPosition extends Coordinate {

@@ -39,14 +39,15 @@ export function usePositionWebSocket() {
           console.log(`위치 수신: ${data.tanks.length}개 탱크`)
         }
       },
-      // onError
-      (error) => {
-        console.error('Position SocketIO 에러:', error)
-        isConnected.value = false
+      // onConnect
+      () => {
+        isConnected.value = true
+        console.log('Position WebSocket 연결됨')
       },
       // onDisconnect
       () => {
         isConnected.value = false
+        console.log('Position WebSocket 연결 끊김')
       }
     )
     

@@ -31,7 +31,7 @@ export function useMissionWebSocket() {
       // onMessage
       (data: MissionMessage) => {
         // 백엔드에서 보내는 메시지 형식:
-        // { type: 'mission_update', mission: 'attack' | 'search' | 'defence' }
+        // { type: 'mission_update', mission: 'combat' | 'search' | 'defense' }
         if (data.type === 'mission_update' && data.mission) {
           // mission-status-store의 공통 함수 사용 (한국어 변환 포함)
           statusReportStore.setMissionFromBackend(data.mission)

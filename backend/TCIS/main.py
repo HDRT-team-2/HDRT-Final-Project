@@ -18,32 +18,35 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 @app.route('/internal/detection', methods=['POST'])
 def receive_detection():
     """
-    IBSM이 개별 탐지 객체 전송 시
+    IBSM이 탐지 객체 배열 전송 시
     
-    IBSM에서 보내야 하는 형식 예시:
-    {
-        "tracking_id": 1001,
-        "class_id": 1,
-        "x": 100.5,
-        "z": 200.3,
-        "alive": true
-    }
+    IBSM에서 보내야 하는 형식 (배열):
+    [
+        {"tracking_id": 1001, "class_id": 1, "x": 100.5, "z": 200.3, "alive": true},
+        {"tracking_id": 1002, "class_id": 2, "x": 150.0, "z": 250.0, "alive": true},
+        ...
+    ]
     
     Frontend로 전송되는 형식:
     {
         "type": "detection_update",
-        "object": { tracking_id, class_id, x, z, alive }
+        "objects": [{ tracking_id, class_id, x, z, alive }, ...]
     }
     """
-    obj = request.get_json()
+    objects = request.get_json()
+    
+    # 배열인지 검증
+    if not isinstance(objects, list):
+        print(f"[Detection] 배열이 아닌 데이터 형식: {type(objects)}")
+        return '', 400
     
     # Frontend로 즉시 전송
     socketio.emit('detection', {
         "type": "detection_update",
-        "object": obj
+        "objects": objects
     })
     
-    print(f"[Detection] tracking_id={obj.get('tracking_id')}, class_id={obj.get('class_id')}, x={obj.get('x'):.1f}, z={obj.get('z'):.1f}")
+    print(f"[Detection] {len(objects)}개 객체 → Frontend 전송")
     
     return '', 204  # No Content (빠른 응답)
 
