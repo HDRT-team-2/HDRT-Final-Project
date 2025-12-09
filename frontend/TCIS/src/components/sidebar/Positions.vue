@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import PositionInfo from './PositionInfo.vue';
-import TargetInput from './TargetInput.vue';
+import TargetPosInfo from './TargetPosInfo.vue';
 </script>
 <template>
 <div class="flex gap-2">
     <PositionInfo/>
-    <TargetInput />
+    <TargetPosInfo />
 </div>
 </template>
