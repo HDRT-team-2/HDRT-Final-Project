@@ -11,7 +11,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 아이콘 비율 (원본 SVG 기준: 32x32)
 const scale = props.size / 10
-const backgroundRadius = 16 * scale
+const backgroundRadius = 40 * scale
 const centerRadius = 4 * scale
 const color = '#FF0000'
 </script>
