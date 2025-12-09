@@ -2,90 +2,83 @@
  * LLM Service - Frontend에서 직접 Gemini API 호출
  */
 
+import type { DetectedObject } from '@/types/detection'
+import type { TankPosition, MissionType } from '@/types/position'
+import type { FireEvent } from '@/types/fire'
+
 export interface LLMCommandResult {
   type: 'command' | 'answer' | 'error'
   message: string
   x?: number
   y?: number
-  action?: 'move' | 'attack' | 'move_and_fire'
+  mission?: 'defense' | 'combat'
 }
 
-// Gemini API 설정
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const MODEL_NAME = 'gemini-2.0-flash-001'
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`
-
-// 시스템 프롬프트
-const SYSTEM_PROMPT = `
-당신은 군사 로봇 제어 시스템의 AI 어시스턴트입니다.
-사용자의 자연어 명령을 분석하여 JSON 형식으로 응답해야 합니다.
-
-화면 좌표 기준:
-- 화면 크기: 300x300
-- 좌측 하단: (0, 0)      
-- 우측 상단: (300, 300)  
-- 중앙: (150, 150)
-- 좌측 상단: (0, 300)    
-- 우측 하단: (300, 0)    
-
-응답 형식은 반드시 다음 중 하나여야 합니다:
-
-1. 이동/공격 명령인 경우:
-{
-  "type": "command",
-  "x": 좌표값,
-  "y": 좌표값,
-  "action": "move" 또는 "attack" 또는 "move_and_fire",
-  "message": "사용자에게 보여줄 응답 메시지"
+export interface LLMContext {
+  currentMission?: MissionType
+  detectedObjects?: DetectedObject[]
+  myTanks?: TankPosition[]
+  targetPosition?: { x: number; y: number }
+  fireHistory?: FireEvent[]
 }
 
-2. 질문인 경우:
-{
-  "type": "answer",
-  "message": "질문에 대한 답변"
-}
+// OpenAI API 설정
+const API_KEY = import.meta.env.VITE_OPENAI_API_KEY
+const MODEL_NAME = 'gpt-4o-mini' // 저렴하고 빠른 모델
+const API_URL = '/api/llm' // Vite 프록시를 통해 OpenAI API 호출
 
-3. 이해할 수 없는 경우:
-{
-  "type": "error",
-  "message": "명령을 이해할 수 없습니다. 다시 말씀해주세요."
-}
+// Rate Limiting (요청 제한)
+let lastRequestTime = 0
+const MIN_REQUEST_INTERVAL = 1000 // 1초 (OpenAI는 더 여유로움)
 
-예시:
-- "우측 상단으로 이동" → {"type": "command", "x": 260, "y": 260, "action": "move", "message": "네, (260, 260)으로 이동하겠습니다"}
-- "중앙 공격" → {"type": "command", "x": 150, "y": 150, "action": "attack", "message": "네, 중앙 (150, 150)을 공격하겠습니다"}
-- "오른쪽으로 가면서 사격" → {"type": "command", "x": 250, "y": 150, "action": "move_and_fire", "message": "네, 오른쪽으로 이동하며 기동사격하겠습니다"}
-- "좌측 하단으로" → {"type": "command", "x": 40, "y": 40, "action": "move", "message": "네, 좌측 하단으로 이동하겠습니다"}
-- "안녕" → {"type": "answer", "message": "안녕하세요! 명령을 기다리고 있습니다"}
+// 시스템 프롬프트 (토큰 절약을 위해 최소화)
+const SYSTEM_PROMPT = `군사 로봇 AI. 좌표(0-300), 임무(defense/combat).
 
-반드시 JSON만 응답하세요. 다른 설명은 추가하지 마세요.
-`
+응답 형식:
+1. 임무변경: {"type":"command","x":150,"y":200,"mission":"defense","message":"답변"}
+2. 질문: {"type":"answer","message":"답변"}
+3. 오류: {"type":"error","message":"오류"}
+
+JSON만 출력.`
 
 /**
- * 현재 컨텍스트 정보 구성
+ * 전장 컨텍스트 정보 구성 (토큰 절약)
  */
-function buildContextInfo(currentPos?: { x: number; y: number }, targetPos?: { x: number; y: number }): string {
-  if (!currentPos && !targetPos) {
-    return ''
+function buildContextInfo(context?: LLMContext): string {
+  if (!context) return ''
+
+  const parts: string[] = []
+
+  // 현재 임무
+  if (context.currentMission) {
+    parts.push(`임무:${context.currentMission}`)
   }
 
-  const context: any = {}
-  
-  if (currentPos) {
-    context.currentPos = {
-      x: Math.round(currentPos.x * 100) / 100,
-      y: Math.round(currentPos.y * 100) / 100
-    }
-  }
-  
-  if (targetPos) {
-    context.targetPos = {
-      x: Math.round(targetPos.x * 100) / 100,
-      y: Math.round(targetPos.y * 100) / 100
-    }
+  // 내 전차 (첫 번째만)
+  if (context.myTanks && context.myTanks.length > 0) {
+    const t = context.myTanks[0]
+    parts.push(`내위치:(${Math.round(t.x)},${Math.round(t.y)})`)
   }
 
-  return `\n\n현재 상태:\n${JSON.stringify(context, null, 2)}`
+  // 목표 위치
+  if (context.targetPosition) {
+    parts.push(`목표:(${Math.round(context.targetPosition.x)},${Math.round(context.targetPosition.y)})`)
+  }
+
+  // 탐지된 객체 (요약만)
+  if (context.detectedObjects && context.detectedObjects.length > 0) {
+    const tanks = context.detectedObjects.filter(obj => obj.class_name === 'tank' || obj.class_name === 'tank_around')
+    const humans = context.detectedObjects.filter(obj => obj.class_name === 'human' || obj.class_name === 'human_around')
+    parts.push(`탐지:전체${context.detectedObjects.length}(전차${tanks.length},보병${humans.length})`)
+  }
+
+  // 사격 이력 (요약만)
+  if (context.fireHistory && context.fireHistory.length > 0) {
+    const hits = context.fireHistory.filter(f => f.result === 'hit').length
+    parts.push(`사격:${context.fireHistory.length}회(명중${hits})`)
+  }
+
+  return parts.length > 0 ? `\n상황:${parts.join(',')}` : ''
 }
 
 /**
@@ -93,53 +86,88 @@ function buildContextInfo(currentPos?: { x: number; y: number }, targetPos?: { x
  */
 export async function parseCommandWithLLM(
   userMessage: string,
-  context?: {
-    currentPos?: { x: number; y: number }
-    targetPos?: { x: number; y: number }
-  }
+  context?: LLMContext
 ): Promise<LLMCommandResult> {
   
   // API 키 확인
   if (!API_KEY) {
-    console.error('VITE_GEMINI_API_KEY가 설정되지 않았습니다')
+    console.error('VITE_OPENAI_API_KEY가 설정되지 않았습니다')
     return {
       type: 'error',
-      message: 'API 키가 설정되지 않았습니다. 환경 변수를 확인해주세요.'
+      message: 'OpenAI API 키가 설정되지 않았습니다. 환경 변수를 확인해주세요.'
     }
   }
+  
+  // 디버깅: 사용 중인 API 키 확인
+  console.log('사용 중인 API 키:', API_KEY?.substring(0, 20) + '...')
 
-  // 컨텍스트 정보 추가
-  const contextInfo = buildContextInfo(context?.currentPos, context?.targetPos)
-  const fullPrompt = `${SYSTEM_PROMPT}${contextInfo}\n\n사용자 명령: ${userMessage}`
+  // Rate Limiting 체크
+  const now = Date.now()
+  const timeSinceLastRequest = now - lastRequestTime
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const waitTime = Math.ceil((MIN_REQUEST_INTERVAL - timeSinceLastRequest) / 1000)
+    return {
+      type: 'error',
+      message: `요청이 너무 빠릅니다. ${waitTime}초 후에 다시 시도해주세요.`
+    }
+  }
+  lastRequestTime = now
 
-  // API 호출 페이로드
+  // 질문에 따라 필요한 컨텍스트만 선택적으로 추가
+  const needsContext = /임무|탐지|전차|보병|위치|목표|사격|명중|적|아군|객체/i.test(userMessage)
+  const contextInfo = needsContext ? buildContextInfo(context) : ''
+  
+  console.log('컨텍스트 포함 여부:', needsContext, '| 질문:', userMessage)
+  
+  const fullPrompt = `${SYSTEM_PROMPT}${contextInfo}\n질문:${userMessage}`
+
+  // OpenAI API 호출 페이로드
   const payload = {
-    contents: [{
-      parts: [{
-        text: fullPrompt
-      }]
-    }]
+    model: MODEL_NAME,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT + contextInfo },
+      { role: 'user', content: `질문:${userMessage}` }
+    ],
+    temperature: 0.3,
+    max_tokens: 500
   }
 
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`
       },
       body: JSON.stringify(payload)
     })
 
     if (!response.ok) {
-      console.error('Gemini API 오류:', response.status, response.statusText)
+      const errorText = await response.text()
+      console.error('OpenAI API 오류:', response.status, response.statusText, errorText)
+      
+      if (response.status === 429) {
+        return {
+          type: 'error',
+          message: 'API 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.'
+        }
+      }
+      
+      if (response.status === 401) {
+        return {
+          type: 'error',
+          message: 'API 키가 유효하지 않습니다. 키를 확인해주세요.'
+        }
+      }
+      
       return {
         type: 'error',
-        message: 'AI 서비스 오류가 발생했습니다.'
+        message: `AI 서비스 오류 (${response.status}): API 키를 확인해주세요.`
       }
     }
 
     const result = await response.json()
-    let llmResponse = result.candidates?.[0]?.content?.parts?.[0]?.text
+    let llmResponse = result.choices?.[0]?.message?.content
 
     if (!llmResponse) {
       return {

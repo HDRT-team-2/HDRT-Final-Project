@@ -6,6 +6,10 @@ import CommandInput from '@/components/commandPanel/CommandInput.vue';
 import { parseCommandWithLLM } from '@/services/llm-service';
 import { useTargetCommand } from '@/composables/useTargetCommand';
 import { useStatusReportStore } from '@/stores/mission-status-store';
+import { useDetectionStore } from '@/stores/detection-store';
+import { usePositionStore } from '@/stores/position-store';
+import { useFireStore } from '@/stores/fire-store';
+import { storeToRefs } from 'pinia';
 
 interface CommandEntry {
   id: number;
@@ -22,6 +26,15 @@ let commandIdCounter = 2;
 
 const { sendTarget } = useTargetCommand();
 const statusReportStore = useStatusReportStore();
+const detectionStore = useDetectionStore();
+const positionStore = usePositionStore();
+const fireStore = useFireStore();
+
+// Store 데이터 가져오기
+const { missionReport } = storeToRefs(statusReportStore);
+const { objects } = storeToRefs(detectionStore);
+const { myTanks } = storeToRefs(positionStore);
+const { fires } = storeToRefs(fireStore);
 
 // 히스토리 컨테이너 ref
 const historyContainer = ref<HTMLElement | null>(null);
@@ -50,8 +63,17 @@ const handleCommandSubmit = async (command: string) => {
   scrollToBottom();
 
   try {
-    // LLM으로 명령어 분석
-    const result = await parseCommandWithLLM(command);
+    // 전역 데이터를 LLM 컨텍스트로 전달
+    const currentMission = missionReport.value.mission === '방어' ? 'defense' : 'combat';
+    const targetPos = missionReport.value.targetPosition;
+    
+    const result = await parseCommandWithLLM(command, {
+      currentMission,
+      detectedObjects: objects.value,
+      myTanks: myTanks.value,
+      targetPosition: targetPos ? { x: targetPos.x, y: targetPos.y } : undefined,
+      fireHistory: fires.value
+    });
     
     // LLM 응답 추가
     commandHistory.value.push({
@@ -62,15 +84,25 @@ const handleCommandSubmit = async (command: string) => {
     });
     scrollToBottom();
 
-    // command 타입이면 좌표를 store에 저장하고 backend로 전송
-    if (result.type === 'command' && result.x !== undefined && result.y !== undefined) {
-      // Store에 목표 좌표 저장
-      statusReportStore.setCommandTarget(result.x, result.y);
+    // command 타입이면 임무 변경 API 호출
+    if (result.type === 'command' && result.x !== undefined && result.y !== undefined && result.mission) {
+      // Store에 목표 좌표 및 임무 저장
+      statusReportStore.setCommandTarget(result.x, result.y, result.mission);
       
-      // Backend로 전송
-      await sendTarget();
+      // Backend로 임무 변경 전송
+      const success = await sendTarget();
       
-      console.log(`[CommandPanel] Target 전송 완료: (${result.x}, ${result.y}), action: ${result.action}`);
+      if (success) {
+        console.log(`[CommandPanel] 임무 변경 완료: (${result.x}, ${result.y}), mission: ${result.mission}`);
+      } else {
+        commandHistory.value.push({
+          id: commandIdCounter++,
+          command: '임무 변경 전송에 실패했습니다',
+          timestamp,
+          type: 'error'
+        });
+        scrollToBottom();
+      }
     }
   } catch (error) {
     // 에러 처리
