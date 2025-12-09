@@ -83,7 +83,7 @@ watch(fires, (newFires) => {
     
     activeArcs.value.push(arc)
     
-    // 1.5초 후 페이드아웃 시작
+    // 0.7초 후 페이드아웃 시작
     setTimeout(() => {
       const arcIndex = activeArcs.value.findIndex(a => a.id === arc.id)
       if (arcIndex !== -1) {
@@ -101,7 +101,7 @@ watch(fires, (newFires) => {
           }
         }, 50)
       }
-    }, 1000)
+    }, 700)
   })
 }, { deep: true })
 </script>

@@ -140,6 +140,17 @@ export const useDetectionStore = defineStore('detection', () => {
   }
   
   /**
+   * 객체의 alive 상태 변경
+   */
+  function setObjectAlive(trackingId: number, alive: boolean) {
+    const obj = objects.value.find(o => o.tracking_id === trackingId)
+    if (obj) {
+      obj.alive = alive
+      console.log(`객체 [${trackingId}] alive 상태 변경: ${alive}`)
+    }
+  }
+  
+  /**
    * 전체 초기화
    */
   function clearObjects() {
@@ -175,6 +186,7 @@ export const useDetectionStore = defineStore('detection', () => {
     // Actions
     updateObject,
     updateObjects,
+    setObjectAlive,
     clearObjects,
     reset
   }

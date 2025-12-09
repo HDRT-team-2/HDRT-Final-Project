@@ -25,6 +25,7 @@ defineProps<Props>()
       :x="coordToSvg(obj.position.x, obj.position.y).x"
       :y="coordToSvg(obj.position.x, obj.position.y).y"
       :size="20"
+      :style="{ opacity: obj.alive ? 1 : 0.6, filter: obj.alive ? 'none' : 'grayscale(100%)' }"
     />
 
     <!-- 적 전차 (주변) -->
@@ -33,6 +34,7 @@ defineProps<Props>()
       :x="coordToSvg(obj.position.x, obj.position.y).x"
       :y="coordToSvg(obj.position.x, obj.position.y).y"
       :size="50"
+      :style="{ opacity: obj.alive ? 1 : 0.6, filter: obj.alive ? 'none' : 'grayscale(100%)' }"
     />
 
     <!-- 적 보병 -->
@@ -41,6 +43,7 @@ defineProps<Props>()
       :x="coordToSvg(obj.position.x, obj.position.y).x"
       :y="coordToSvg(obj.position.x, obj.position.y).y"
       :size="8"
+      :style="{ opacity: obj.alive ? 1 : 0.6, filter: obj.alive ? 'none' : 'grayscale(100%)' }"
     />
 
     <!-- 적 보병 (주변) -->
@@ -49,6 +52,7 @@ defineProps<Props>()
       :x="coordToSvg(obj.position.x, obj.position.y).x"
       :y="coordToSvg(obj.position.x, obj.position.y).y"
       :size="8"
+      :style="{ opacity: obj.alive ? 1 : 0.6, filter: obj.alive ? 'none' : 'grayscale(100%)' }"
     />
     
     <!-- 차량 -->

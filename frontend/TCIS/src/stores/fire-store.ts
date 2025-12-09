@@ -39,6 +39,12 @@ export const useFireStore = defineStore('fire', () => {
     const fire = fires.value.find(f => f.target_tracking_id === targetTrackingId && !f.result)
     if (fire) {
       fire.result = result
+      
+      // 명중 시 해당 객체를 사망 처리
+      if (result === 'hit') {
+        const detectionStore = useDetectionStore()
+        detectionStore.setObjectAlive(targetTrackingId, false)
+      }
     }
   }
   
