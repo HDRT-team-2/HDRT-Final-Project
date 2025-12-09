@@ -49,8 +49,8 @@ export const CLASS_NAME_KR: Record<ObjectClassName, string> = {
   rock_large: '큰 바위',
   mine: '지뢰',
   wall: '벽',
-  tank_around: '주변 전차',
-  human_around: '주변 보병'
+  tank_around: '전차',
+  human_around: '보병'
 }
 
 // 프론트에서 사용할 형태

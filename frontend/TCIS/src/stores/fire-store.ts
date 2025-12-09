@@ -13,12 +13,13 @@ export const useFireStore = defineStore('fire', () => {
   
   // 발포 이벤트 추가
   function addFire(data: FireResponse) {
+    
     // detection-store에서 target_tracking_id로 객체 찾기
     const detectionStore = useDetectionStore()
     const targetObject = detectionStore.objects.find(
       obj => obj.tracking_id === data.target_tracking_id
     )
-    
+        
     // 찾은 객체의 class_name 사용, 없으면 'other'
     const target_class_name = targetObject?.class_name || 'other'
     
@@ -31,7 +32,6 @@ export const useFireStore = defineStore('fire', () => {
     }
     
     fires.value.push(newFire)
-    console.log(`발사: 아군 [${data.ally_id}] → 대상 [${data.target_tracking_id}] (${target_class_name})`)
   }
   
   // 명중 결과 업데이트
@@ -39,14 +39,12 @@ export const useFireStore = defineStore('fire', () => {
     const fire = fires.value.find(f => f.target_tracking_id === targetTrackingId && !f.result)
     if (fire) {
       fire.result = result
-      console.log(`명중 결과 업데이트: 대상 [${targetTrackingId}] - ${result}`)
     }
   }
   
   // 전체 초기화
   function clearFires() {
     fires.value = []
-    console.log('모든 발포 기록 삭제')
   }
 
   // Return---------------------------------------

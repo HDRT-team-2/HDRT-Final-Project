@@ -47,27 +47,25 @@ function createArcPath(startX: number, startY: number, endX: number, endY: numbe
   return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`
 }
 
+// 이미 처리한 fire ID를 추적
+const processedFireIds = ref<Set<string>>(new Set())
+
 // fire 이벤트 감지 및 포물선 생성
-watch(fires, (newFires, oldFires) => {
-  // 새로 추가된 fire 이벤트 찾기
-  const addedFires = newFires.filter(newFire => 
-    !oldFires?.some(oldFire => oldFire.id === newFire.id)
-  )
+watch(fires, (newFires) => {
+  // 아직 처리하지 않은 fire 이벤트 찾기
+  const addedFires = newFires.filter(fire => !processedFireIds.value.has(fire.id))
   
   addedFires.forEach(fire => {
+    // 처리 목록에 추가
+    processedFireIds.value.add(fire.id)
+    
     // ally_id로 아군 위치 찾기
-    const allyTank = props.myTanks.find(tank => tank.tank_id === fire.ally_id)
-    if (!allyTank) {
-      console.warn(`아군 탱크 [${fire.ally_id}]를 찾을 수 없음`)
-      return
-    }
+    const allyTank = props.myTanks.find(tank => String(tank.tank_id) === String(fire.ally_id))
+    if (!allyTank) return
     
     // target_tracking_id로 적 위치 찾기
-    const targetObject = objects.value.find(obj => obj.tracking_id === fire.target_tracking_id)
-    if (!targetObject) {
-      console.warn(`대상 객체 [${fire.target_tracking_id}]를 찾을 수 없음`)
-      return
-    }
+    const targetObject = objects.value.find(obj => Number(obj.tracking_id) === Number(fire.target_tracking_id))
+    if (!targetObject) return
     
     // 좌표를 SVG 좌표로 변환
     const startSvg = props.coordToSvg(allyTank.x, allyTank.y)
@@ -103,7 +101,7 @@ watch(fires, (newFires, oldFires) => {
           }
         }, 50)
       }
-    }, 1500)
+    }, 1000)
   })
 }, { deep: true })
 </script>
