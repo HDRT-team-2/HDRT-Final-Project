@@ -121,7 +121,7 @@ export const useDetectionStore = defineStore('detection', () => {
       const newObj = parseDetectionResponse(data)
       objects.value.push(newObj)
       
-      console.log(`새 객체 발견 [${data.tracking_id}]:`, newObj.class_name, newObj.position)
+      // console.log(`새 객체 발견 [${data.tracking_id}]:`, newObj.class_name, newObj.position)
     }
   }
 

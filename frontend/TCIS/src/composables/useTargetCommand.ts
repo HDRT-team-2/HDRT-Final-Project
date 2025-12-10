@@ -42,8 +42,7 @@ export function useTargetCommand() {
         // MissionStatusReport에서 표시, WebSocket으로도 계속 업데이트됨
         statusReportStore.setMissionFromBackend(res.data.mission)
         statusReportStore.setTargetPosition(res.data.x, res.data.y)
-        
-        console.log(`백엔드 확정 - 위치: (${res.data.x}, ${res.data.y}), 미션: ${res.data.mission}`)
+        console.log('목표 전송 성공:', res.data)
       }
       
       return true

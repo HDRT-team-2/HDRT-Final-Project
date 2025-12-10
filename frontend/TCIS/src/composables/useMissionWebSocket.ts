@@ -29,13 +29,26 @@ export function useMissionWebSocket() {
       // eventName
       'mission',
       // onMessage
-      (data: MissionMessage) => {
+      (data: any) => {
         // 백엔드에서 보내는 메시지 형식:
-        // { tcombatmission_update', missson: 'attack' | 'search' | 'defence' }
+        // { type: 'mission_update', mission: { mission: { type: 'combat', x: 123.123, y: 123.123 } } }
         if (data.type === 'mission_update' && data.mission) {
-          // mission-status-store의 공통 함수 사용 (한국어 변환 포함)
-          statusReportStore.setMissionFromBackend(data.mission)
-          // console.log(`미션 수신: ${data.mission}`)
+          const missionData = data.mission
+          const { type: mission_type, x, y } = missionData
+          
+          console.log('미션 데이터 수신:', { mission_type, x, y })
+          
+          // mission-status-store에 미션 타입 저장
+          if (mission_type) {
+            statusReportStore.setMissionFromBackend(mission_type)
+          }
+          
+          // mission-status-store에 목표 위치 및 commandTarget 저장
+          if (mission_type && x !== undefined && y !== undefined) {
+            statusReportStore.setTargetPosition(x, y)
+            statusReportStore.setCommandTarget(x, y, mission_type)
+            console.log('목표 위치 및 commandTarget 저장 완료:', { x, y, mission: mission_type })
+          }
         }
       },
       // onConnect

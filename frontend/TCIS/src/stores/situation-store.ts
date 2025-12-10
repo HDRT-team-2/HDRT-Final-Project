@@ -38,8 +38,6 @@ export const useSituationStore = defineStore('situation', () => {
     if (events.value.length > maxEvents.value) {
       events.value = events.value.slice(0, maxEvents.value)
     }
-    
-    console.log(`상황 로그 추가: ${event.type} [ID: ${event.id}]`)
   }
   
   // 최대 이벤트 개수 설정
@@ -52,7 +50,6 @@ export const useSituationStore = defineStore('situation', () => {
     events.value = []
     addedDetectionIds.value.clear()
     addedFireIds.value.clear()
-    console.log(' 모든 상황 로그 삭제')
   }
 
   // Watch: Detection Store 감시 --------------------------------

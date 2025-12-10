@@ -15,6 +15,7 @@ import DetectedObjects from './DetectedObjects.vue'
 const mapStore = useMapStore()
 const { currentMapImage } = storeToRefs(mapStore)
 const statusReportStore = useStatusReportStore()
+const { commandTarget } = storeToRefs(statusReportStore)
 const { sendTarget } = useTargetCommand()
 
 // 'a' 키 눌림 상태 추적
@@ -146,7 +147,7 @@ function handleContextMenu(event: MouseEvent) {
       v-if="target"
       :x="coordToSvg(target.x, target.y).x"
       :y="coordToSvg(target.x, target.y).y"
-      :size="8"
+      :size="18"
       :is-danger="commandTarget?.mission === 'combat'"
     />
     

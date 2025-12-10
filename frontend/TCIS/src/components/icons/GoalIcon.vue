@@ -19,13 +19,44 @@ const color = props.isDanger ? '#CC0000' : '#15803D'
 
 <template>
   <g>
-    <!-- 내부 원 (채워진) -->
+    <!-- 빛나는 효과를 위한 외부 원 (애니메이션) -->
+    <circle
+      :cx="props.x"
+      :cy="props.y"
+      :r="radius * 1.5"
+      :fill="color"
+      opacity="0.3"
+    >
+      <animate
+        attributeName="r"
+        :from="radius"
+        :to="radius * 2"
+        dur="1.5s"
+        repeatCount="indefinite"
+      />
+      <animate
+        attributeName="opacity"
+        from="0.6"
+        to="0"
+        dur="1.5s"
+        repeatCount="indefinite"
+      />
+    </circle>
+    
+    <!-- 내부 원 (채워진, 펄스 효과) -->
     <circle
       :cx="props.x"
       :cy="props.y"
       :r="innerRadius"
       :fill="color"
-    />
+    >
+      <animate
+        attributeName="opacity"
+        values="1;0.5;1"
+        dur="1s"
+        repeatCount="indefinite"
+      />
+    </circle>
     
     <!-- 외부 원 (테두리만) -->
     <circle
@@ -33,8 +64,15 @@ const color = props.isDanger ? '#CC0000' : '#15803D'
       :cy="props.y"
       :r="radius - 0.5"
       :stroke="color"
-      stroke-width="1"
+      stroke-width="1.5"
       fill="none"
-    />
+    >
+      <animate
+        attributeName="stroke-width"
+        values="1.5;2.5;1.5"
+        dur="1s"
+        repeatCount="indefinite"
+      />
+    </circle>
   </g>
 </template>
