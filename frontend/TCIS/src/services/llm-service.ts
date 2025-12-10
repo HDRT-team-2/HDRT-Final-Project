@@ -32,14 +32,21 @@ let lastRequestTime = 0
 const MIN_REQUEST_INTERVAL = 1000 // 1초 (OpenAI는 더 여유로움)
 
 // 시스템 프롬프트 (토큰 절약을 위해 최소화)
-const SYSTEM_PROMPT = `군사 로봇 AI. 좌표(0-300), 임무(defense/combat).
+const SYSTEM_PROMPT = `군사 AI. 컨텍스트의 모든 정보를 완전히 제공.
 
-응답 형식:
-1. 임무변경: {"type":"command","x":150,"y":200,"mission":"defense","message":"답변"}
-2. 질문: {"type":"answer","message":"답변"}
-3. 오류: {"type":"error","message":"오류"}
+응답 타입:
+1. type:"command" - 좌표(숫자 2개) + 임무(공격/방어/수색)
+   - 공격=combat, 방어=defense, 수색=search
+   - 예: {"type":"command","x":123,"y":45,"mission":"combat","message":"목표 설정"}
 
-JSON만 출력.`
+2. type:"answer" - 질문
+   - 컨텍스트: "내위치:(298,279) 탐지:적전차2[(100,50),(120,60)],장애물15"
+   - 탐지 객체는 위치 정보 포함 (대괄호 안)
+   - 거리 질문 → 내위치와 적 위치로 직선거리 계산 가능
+   - "모든", "전체" 질문 → 모든 정보 나열
+   - 예: {"type":"answer","message":"적 전차 2대 (100,50), (120,60). 내 위치 (298,279)에서 약 200m, 220m"}
+
+답변 시 정보 누락 금지. JSON만 출력.`
 
 /**
  * 전장 컨텍스트 정보 구성 (토큰 절약)
@@ -49,9 +56,10 @@ function buildContextInfo(context?: LLMContext): string {
 
   const parts: string[] = []
 
-  // 현재 임무
+  // 현재 임무 (한국어로 변환)
   if (context.currentMission) {
-    parts.push(`임무:${context.currentMission}`)
+    const missionKorean = context.currentMission === 'defense' ? '방어' : context.currentMission === 'combat' ? '공격' : '미정'
+    parts.push(`임무:${missionKorean}`)
   }
 
   // 내 전차 (첫 번째만)
@@ -65,11 +73,27 @@ function buildContextInfo(context?: LLMContext): string {
     parts.push(`목표:(${Math.round(context.targetPosition.x)},${Math.round(context.targetPosition.y)})`)
   }
 
-  // 탐지된 객체 (요약만)
+  // 탐지된 객체 (상세 정보 포함)
   if (context.detectedObjects && context.detectedObjects.length > 0) {
-    const tanks = context.detectedObjects.filter(obj => obj.class_name === 'tank' || obj.class_name === 'tank_around')
-    const humans = context.detectedObjects.filter(obj => obj.class_name === 'human' || obj.class_name === 'human_around')
-    parts.push(`탐지:전체${context.detectedObjects.length}(전차${tanks.length},보병${humans.length})`)
+    const objs = context.detectedObjects
+    const enemyTanks = objs.filter(obj => (obj.class_name === 'tank' || obj.class_name === 'tank_around') && obj.alive)
+    const enemyInfantry = objs.filter(obj => (obj.class_name === 'human' || obj.class_name === 'human_around') && obj.alive)
+    const obstacles = objs.filter(obj => ['rock_small', 'rock_large', 'wall', 'mine'].includes(obj.class_name))
+    const vehicles = objs.filter(obj => ['car', 'truck'].includes(obj.class_name))
+    
+    const summary: string[] = []
+    if (enemyTanks.length > 0) {
+      const positions = enemyTanks.map(t => `(${Math.round(t.position.x)},${Math.round(t.position.y)})`).join(',')
+      summary.push(`적전차${enemyTanks.length}[${positions}]`)
+    }
+    if (enemyInfantry.length > 0) {
+      const positions = enemyInfantry.map(t => `(${Math.round(t.position.x)},${Math.round(t.position.y)})`).join(',')
+      summary.push(`적보병${enemyInfantry.length}[${positions}]`)
+    }
+    if (obstacles.length > 0) summary.push(`장애물${obstacles.length}`)
+    if (vehicles.length > 0) summary.push(`차량${vehicles.length}`)
+    
+    parts.push(`탐지:${summary.join(',')}`)
   }
 
   // 사격 이력 (요약만)
