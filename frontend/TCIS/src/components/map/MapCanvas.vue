@@ -97,7 +97,7 @@ function handleContextMenu(event: MouseEvent) {
   const mission = isAKeyPressed.value ? 'combat' : 'defense'
   
   // mission-status store에 명령 target 설정
-  statusReportStore.setCommandTarget(coord.x, coord.y, mission)
+  // statusReportStore.setCommandTarget(coord.x, coord.y, mission)
   
   console.log(`목표 설정: (${coord.x.toFixed(2)}, ${coord.y.toFixed(2)}), mission: ${mission}`)
   
