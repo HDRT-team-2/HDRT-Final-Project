@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Card from '@/components/common/Card.vue'
 import Badge from '@/components/common/Badge.vue'
+import DownloadHistoryBtn from '@/components/common/DownloadHistoryBtn.vue'
 import { storeToRefs } from 'pinia'
 import { useStatusReportStore } from '@/stores/mission-status-store'
 import { computed } from 'vue'
@@ -24,7 +25,10 @@ const statusColor = computed<'success' | 'yellow' | 'danger'>(() => {
 })
 </script>
 <template>
-  <Card title="임무 상태">
+  <Card title="임무 상태" :show-header-slot="true">
+    <template #header-actions>
+      <DownloadHistoryBtn />
+    </template>
     <div class="space-y-1">
       <!-- 작전 정보 -->
       <div class="p-2 flex items-center justify-between">
