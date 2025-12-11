@@ -67,6 +67,18 @@ const handleCommandSubmit = async (command: string) => {
     const currentMission = missionReport.value.mission === '방어' ? 'defense' : 'combat';
     const targetPos = missionReport.value.targetPosition;
     
+    
+    // 모든 class_name 종류 확인
+    const classNames = new Set(objects.value.map(o => o.class_name));
+    
+    // 각 class_name별 개수
+    const classCounts: Record<string, number> = {};
+    objects.value.forEach(obj => {
+      classCounts[obj.class_name] = (classCounts[obj.class_name] || 0) + 1;
+    });
+    
+    const obstacles = objects.value.filter(obj => ['rock_small', 'rock_large', 'wall', 'mine', 'other'].includes(obj.class_name));
+    
     const result = await parseCommandWithLLM(command, {
       currentMission,
       detectedObjects: objects.value,
@@ -74,6 +86,91 @@ const handleCommandSubmit = async (command: string) => {
       targetPosition: targetPos ? { x: targetPos.x, y: targetPos.y } : undefined,
       fireHistory: fires.value
     });
+    
+    // relative_command 타입이면 좌표 계산
+    if (result.type === 'relative_command' && result.target && result.mission) {
+      const myPos = myTanks.value.length > 0 ? myTanks.value[0] : { x: 0, y: 0 };
+      
+      // 대상 적 필터링
+      let enemies = objects.value.filter(obj => obj.alive);
+      if (result.targetType === 'tank') {
+        enemies = enemies.filter(obj => obj.class_name === 'tank' || obj.class_name === 'tank_around');
+      } else if (result.targetType === 'infantry') {
+        enemies = enemies.filter(obj => obj.class_name === 'human' || obj.class_name === 'human_around');
+      } else {
+        // any: 전차 또는 보병
+        enemies = enemies.filter(obj => 
+          ['tank', 'tank_around', 'human', 'human_around'].includes(obj.class_name)
+        );
+      }
+      
+      if (enemies.length === 0) {
+        commandHistory.value.push({
+          id: commandIdCounter++,
+          command: '대상 적이 없습니다',
+          timestamp,
+          type: 'error'
+        });
+        scrollToBottom();
+      } else {
+        let targetEnemy;
+        
+        if (result.target === 'closest_enemy') {
+          // 가장 가까운 적
+          targetEnemy = enemies.reduce((closest, enemy) => {
+            const distCurrent = Math.hypot(enemy.position.x - myPos.x, enemy.position.y - myPos.y);
+            const distClosest = Math.hypot(closest.position.x - myPos.x, closest.position.y - myPos.y);
+            return distCurrent < distClosest ? enemy : closest;
+          });
+        } else if (result.target === 'farthest_enemy') {
+          // 가장 먼 적
+          targetEnemy = enemies.reduce((farthest, enemy) => {
+            const distCurrent = Math.hypot(enemy.position.x - myPos.x, enemy.position.y - myPos.y);
+            const distFarthest = Math.hypot(farthest.position.x - myPos.x, farthest.position.y - myPos.y);
+            return distCurrent > distFarthest ? enemy : farthest;
+          });
+        } else if (result.target === 'center_enemy') {
+          // 지도 중앙(150, 150)에 가장 가까운 적
+          const centerX = 150, centerY = 150;
+          targetEnemy = enemies.reduce((closest, enemy) => {
+            const distCurrent = Math.hypot(enemy.position.x - centerX, enemy.position.y - centerY);
+            const distClosest = Math.hypot(closest.position.x - centerX, closest.position.y - centerY);
+            return distCurrent < distClosest ? enemy : closest;
+          });
+        } else if (result.target === 'topmost_enemy') {
+          // 최상단 (y 최대)
+          targetEnemy = enemies.reduce((topmost, enemy) => 
+            enemy.position.y > topmost.position.y ? enemy : topmost
+          );
+        } else if (result.target === 'bottommost_enemy') {
+          // 최하단 (y 최소)
+          targetEnemy = enemies.reduce((bottommost, enemy) => 
+            enemy.position.y < bottommost.position.y ? enemy : bottommost
+          );
+        } else if (result.target === 'leftmost_enemy') {
+          // 최좌측 (x 최소)
+          targetEnemy = enemies.reduce((leftmost, enemy) => 
+            enemy.position.x < leftmost.position.x ? enemy : leftmost
+          );
+        } else if (result.target === 'rightmost_enemy') {
+          // 최우측 (x 최대)
+          targetEnemy = enemies.reduce((rightmost, enemy) => 
+            enemy.position.x > rightmost.position.x ? enemy : rightmost
+          );
+        }
+        
+        if (targetEnemy) {
+          const targetX = Math.round(targetEnemy.position.x);
+          const targetY = Math.round(targetEnemy.position.y);
+          
+          // 계산된 좌표로 command 실행
+          result.type = 'command';
+          result.x = targetX;
+          result.y = targetY;
+          result.message = `${result.message || '목표 설정'} - 목표: (${targetX}, ${targetY})`;
+        }
+      }
+    }
     
     // LLM 응답 추가
     commandHistory.value.push({

@@ -7,11 +7,14 @@ import type { TankPosition, MissionType } from '@/types/position'
 import type { FireEvent } from '@/types/fire'
 
 export interface LLMCommandResult {
-  type: 'command' | 'answer' | 'error'
+  type: 'command' | 'answer' | 'error' | 'relative_command'
   message: string
   x?: number
   y?: number
   mission?: 'defense' | 'combat'
+  // 상대적 명령용 필드
+  target?: 'closest_enemy' | 'farthest_enemy' | 'center_enemy' | 'topmost_enemy' | 'bottommost_enemy' | 'leftmost_enemy' | 'rightmost_enemy'
+  targetType?: 'tank' | 'infantry' | 'any'
 }
 
 export interface LLMContext {
@@ -31,22 +34,30 @@ const API_URL = '/api/llm' // Vite 프록시를 통해 OpenAI API 호출
 let lastRequestTime = 0
 const MIN_REQUEST_INTERVAL = 1000 // 1초 (OpenAI는 더 여유로움)
 
-// 시스템 프롬프트 (토큰 절약을 위해 최소화)
-const SYSTEM_PROMPT = `군사 AI. 컨텍스트의 모든 정보를 완전히 제공.
+// 시스템 프롬프트 (간결하고 원칙 중심)
+const SYSTEM_PROMPT = `군사 AI. 존댓말 사용. JSON만 출력.
 
-응답 타입:
-1. type:"command" - 좌표(숫자 2개) + 임무(공격/방어/수색)
-   - 공격=combat, 방어=defense, 수색=search
-   - 예: {"type":"command","x":123,"y":45,"mission":"combat","message":"목표 설정"}
+타입 구분:
+1. 명확한 좌표(x,y) + 임무어 → type:"command"
+   예: "100,200 공격" → {"type":"command","x":100,"y":200,"mission":"combat","message":"..."}
 
-2. type:"answer" - 질문
-   - 컨텍스트: "내위치:(298,279) 탐지:적전차2[(100,50),(120,60)],장애물15"
-   - 탐지 객체는 위치 정보 포함 (대괄호 안)
-   - 거리 질문 → 내위치와 적 위치로 직선거리 계산 가능
-   - "모든", "전체" 질문 → 모든 정보 나열
-   - 예: {"type":"answer","message":"적 전차 2대 (100,50), (120,60). 내 위치 (298,279)에서 약 200m, 220m"}
+2. 좌표 없이 공격/방어/수색 명령 → type:"relative_command"
+   - target: closest_enemy(기본), farthest_enemy, topmost_enemy, bottommost_enemy, leftmost_enemy, rightmost_enemy, center_enemy
+   - targetType: tank(전차), infantry(보병), any(기본)
+   - mission: combat, defense, search
+   예시:
+   - "적 공격" → {"type":"relative_command","target":"closest_enemy","targetType":"any","mission":"combat"}
+   - "전차 공격" → {"type":"relative_command","target":"closest_enemy","targetType":"tank","mission":"combat"}
+   - "가장 먼 적" → {"type":"relative_command","target":"farthest_enemy","targetType":"any","mission":"combat"}
 
-답변 시 정보 누락 금지. JSON만 출력.`
+3. 질문 → type:"answer"
+   - 컨텍스트 정보만 사용. 없으면 "정보 없습니다"
+   - "적 몇", "적 갯수", "적 개수" → 탐지된 적 전체 정보
+   예: {"type":"answer","message":"적 전차 2대 (100,50), (120,60)입니다"}
+
+원칙:
+- 추측 금지. 컨텍스트에 없으면 "정보 없습니다"
+- 존댓말 필수`
 
 /**
  * 전장 컨텍스트 정보 구성 (토큰 절약)
@@ -57,8 +68,9 @@ function buildContextInfo(context?: LLMContext): string {
   const parts: string[] = []
 
   // 현재 임무 (한국어로 변환)
+  let missionKorean = '미정'
   if (context.currentMission) {
-    const missionKorean = context.currentMission === 'defense' ? '방어' : context.currentMission === 'combat' ? '공격' : '미정'
+    missionKorean = context.currentMission === 'defense' ? '방어' : context.currentMission === 'combat' ? '공격' : '미정'
     parts.push(`임무:${missionKorean}`)
   }
 
@@ -68,9 +80,10 @@ function buildContextInfo(context?: LLMContext): string {
     parts.push(`내위치:(${Math.round(t.x)},${Math.round(t.y)})`)
   }
 
-  // 목표 위치
-  if (context.targetPosition) {
-    parts.push(`목표:(${Math.round(context.targetPosition.x)},${Math.round(context.targetPosition.y)})`)
+  // 목표 위치 (0,0이 아닐 때만, 임무에 따라 이름 변경)
+  if (context.targetPosition && (context.targetPosition.x !== 0 || context.targetPosition.y !== 0)) {
+    const targetLabel = missionKorean === '방어' ? '방어위치' : missionKorean === '공격' ? '공격위치' : '목표'
+    parts.push(`${targetLabel}:(${Math.round(context.targetPosition.x)},${Math.round(context.targetPosition.y)})`)
   }
 
   // 탐지된 객체 (상세 정보 포함)
@@ -78,11 +91,13 @@ function buildContextInfo(context?: LLMContext): string {
     const objs = context.detectedObjects
     const enemyTanks = objs.filter(obj => (obj.class_name === 'tank' || obj.class_name === 'tank_around') && obj.alive)
     const enemyInfantry = objs.filter(obj => (obj.class_name === 'human' || obj.class_name === 'human_around') && obj.alive)
-    const obstacles = objs.filter(obj => ['rock_small', 'rock_large', 'wall', 'mine'].includes(obj.class_name))
+    const obstacles = objs.filter(obj => ['rock_small', 'rock_large', 'wall', 'mine', 'other'].includes(obj.class_name))
+    console.log('[LLM Context] 전체 객체:', objs.length, '장애물:', obstacles.length, obstacles.map(o => o.class_name))
     const vehicles = objs.filter(obj => ['car', 'truck'].includes(obj.class_name))
     
     const summary: string[] = []
     if (enemyTanks.length > 0) {
+      console.log('[LLM Context] 적 전차:', enemyTanks.map(t => ({ id: t.tracking_id, pos: t.position })))
       const positions = enemyTanks.map(t => `(${Math.round(t.position.x)},${Math.round(t.position.y)})`).join(',')
       summary.push(`적전차${enemyTanks.length}[${positions}]`)
     }
@@ -90,8 +105,8 @@ function buildContextInfo(context?: LLMContext): string {
       const positions = enemyInfantry.map(t => `(${Math.round(t.position.x)},${Math.round(t.position.y)})`).join(',')
       summary.push(`적보병${enemyInfantry.length}[${positions}]`)
     }
-    if (obstacles.length > 0) summary.push(`장애물${obstacles.length}`)
-    if (vehicles.length > 0) summary.push(`차량${vehicles.length}`)
+    if (obstacles.length > 0) summary.push(`장애물:${obstacles.length}개`)
+    if (vehicles.length > 0) summary.push(`차량:${vehicles.length}개`)
     
     parts.push(`탐지:${summary.join(',')}`)
   }
@@ -138,7 +153,7 @@ export async function parseCommandWithLLM(
   lastRequestTime = now
 
   // 질문에 따라 필요한 컨텍스트만 선택적으로 추가
-  const needsContext = /임무|탐지|전차|보병|위치|목표|사격|명중|적|아군|객체/i.test(userMessage)
+  const needsContext = /임무|탐지|전차|보병|위치|목표|사격|명중|적|아군|객체|장애물|바위|지뢰|차량/i.test(userMessage)
   const contextInfo = needsContext ? buildContextInfo(context) : ''
   
   console.log('컨텍스트 포함 여부:', needsContext, '| 질문:', userMessage)

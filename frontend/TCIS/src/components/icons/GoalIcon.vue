@@ -14,7 +14,6 @@ const props = withDefaults(defineProps<Props>(), {
 // 원본 SVG 기준: 12x12
 const radius = props.size / 2
 const innerRadius = radius * 0.4 // 2.4 / 6 비율
-const color = props.isDanger ? '#CC0000' : '#15803D'
 </script>
 
 <template>
@@ -24,7 +23,7 @@ const color = props.isDanger ? '#CC0000' : '#15803D'
       :cx="props.x"
       :cy="props.y"
       :r="radius * 1.5"
-      :fill="color"
+      :fill="props.isDanger ? '#CC0000' : '#15803D'"
       opacity="0.3"
     >
       <animate
@@ -48,7 +47,7 @@ const color = props.isDanger ? '#CC0000' : '#15803D'
       :cx="props.x"
       :cy="props.y"
       :r="innerRadius"
-      :fill="color"
+      :fill="props.isDanger ? '#CC0000' : '#15803D'"
     >
       <animate
         attributeName="opacity"
@@ -63,7 +62,7 @@ const color = props.isDanger ? '#CC0000' : '#15803D'
       :cx="props.x"
       :cy="props.y"
       :r="radius - 0.5"
-      :stroke="color"
+      :stroke="props.isDanger ? '#CC0000' : '#15803D'"
       stroke-width="1.5"
       fill="none"
     >
