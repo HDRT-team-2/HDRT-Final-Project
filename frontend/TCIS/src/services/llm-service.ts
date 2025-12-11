@@ -7,14 +7,29 @@ import type { TankPosition, MissionType } from '@/types/position'
 import type { FireEvent } from '@/types/fire'
 
 export interface LLMCommandResult {
-  type: 'command' | 'answer' | 'error' | 'relative_command'
+  type: 'command' | 'answer' | 'error' | 'relative_command' | 'config' | 'multi'
   message: string
   x?: number
   y?: number
-  mission?: 'defense' | 'combat'
+  mission?: 'defense' | 'combat' | 'search'
   // 상대적 명령용 필드
   target?: 'closest_enemy' | 'farthest_enemy' | 'center_enemy' | 'topmost_enemy' | 'bottommost_enemy' | 'leftmost_enemy' | 'rightmost_enemy'
   targetType?: 'tank' | 'infantry' | 'any'
+  // 설정 변경용 필드
+  operationName?: string
+  commander?: string
+  // 다중 명령용 필드
+  commands?: Array<{
+    type: 'command' | 'relative_command' | 'config'
+    message?: string
+    x?: number
+    y?: number
+    mission?: 'defense' | 'combat'
+    target?: string
+    targetType?: string
+    operationName?: string
+    commander?: string
+  }>
 }
 
 export interface LLMContext {
@@ -23,6 +38,8 @@ export interface LLMContext {
   myTanks?: TankPosition[]
   targetPosition?: { x: number; y: number }
   fireHistory?: FireEvent[]
+  operationName?: string
+  commander?: string
 }
 
 // OpenAI API 설정
@@ -37,9 +54,17 @@ const MIN_REQUEST_INTERVAL = 1000 // 1초 (OpenAI는 더 여유로움)
 // 시스템 프롬프트 (간결하고 원칙 중심)
 const SYSTEM_PROMPT = `군사 AI. 존댓말 사용. JSON만 출력.
 
+중요 규칙:
+- 숫자,숫자 패턴 보이면 무조건 command (config 아님!)
+- "지시자" = "지휘관"
+- 좌표 없고 작전명/지휘관만 있으면 config
+
 타입 구분:
-1. 명확한 좌표(x,y) + 임무어 → type:"command"
-   예: "100,200 공격" → {"type":"command","x":100,"y":200,"mission":"combat","message":"..."}
+1. 명확한 좌표(x,y) + 임무어 → type:"command" (최우선!)
+   - 좌표가 있으면 무조건 command (config 아님)
+   - mission: combat(공격), defense(방어), search(수색)
+   예: "100,200 공격" → {"type":"command","x":100,"y":200,"mission":"combat","message":"목표 설정"}
+   예: "300,300으로 방어" → {"type":"command","x":300,"y":300,"mission":"defense","message":"방어 위치 설정"}
 
 2. 좌표 없이 공격/방어/수색 명령 → type:"relative_command"
    - target: closest_enemy(기본), farthest_enemy, topmost_enemy, bottommost_enemy, leftmost_enemy, rightmost_enemy, center_enemy
@@ -55,7 +80,22 @@ const SYSTEM_PROMPT = `군사 AI. 존댓말 사용. JSON만 출력.
    - "적 몇", "적 갯수", "적 개수" → 탐지된 적 전체 정보
    예: {"type":"answer","message":"적 전차 2대 (100,50), (120,60)입니다"}
 
-원칙:
+4. 작전명/지휘관 설정/변경 → type:"config"
+   - "작전명", "지휘관", "지시자" (지시자=지휘관) 키워드 포함
+   - 좌표(x,y)가 있으면 config 아님! command 우선
+   - "나는 Y", "지시자는 Y", "지휘관 Y" → commander=Y
+   예시:
+   - "작전명을 천둥으로" → {"type":"config","operationName":"천둥","message":"작전명을 천둥으로 변경했습니다"}
+   - "지휘관 홍길동" → {"type":"config","commander":"홍길동","message":"지휘관을 홍길동으로 변경했습니다"}
+   - "나는 권다솔 작전 지시자다" → {"type":"config","commander":"권다솔","message":"지휘관을 권다솔로 변경했습니다"}
+   - "작전명은 번개 나는 권다솔" → {"type":"config","operationName":"번개","commander":"권다솔","message":"작전명을 번개, 지휘관을 권다솔로 변경했습니다"}
+   - "작전명은 X 123,456 공격" → config 우선! {"type":"config","operationName":"X",...} (좌표는 무시)
+   - "작전명은 번개 나는 권다솔" → {"type":"config","operationName":"번개","commander":"권다솔","message":"작전명을 번개, 지휘관을 권다솔로 변경했습니다"}
+
+5. 여러 명령 동시 입력 → type:"multi"
+   - commands 배열에 순서대로 명령 나열
+   예: "작전명은 번개 나는 권다솔이다. 123,456으로 공격하라" → 
+   {"type":"multi","message":"작전명 변경 및 공격 명령","commands":[{"type":"config","operationName":"번개","commander":"권다솔"},{"type":"command","x":123,"y":456,"mission":"combat"}]}
 - 추측 금지. 컨텍스트에 없으면 "정보 없습니다"
 - 존댓말 필수`
 
@@ -67,6 +107,16 @@ function buildContextInfo(context?: LLMContext): string {
 
   const parts: string[] = []
 
+  // 작전명
+  if (context.operationName) {
+    parts.push(`작전명:${context.operationName}`)
+  }
+  
+  // 지휘관
+  if (context.commander) {
+    parts.push(`지휘관:${context.commander}`)
+  }
+  
   // 현재 임무 (한국어로 변환)
   let missionKorean = '미정'
   if (context.currentMission) {

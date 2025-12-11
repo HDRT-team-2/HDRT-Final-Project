@@ -25,7 +25,7 @@ const statusColor = computed<'success' | 'yellow' | 'danger'>(() => {
 })
 </script>
 <template>
-  <Card title="임무 상태" :show-header-slot="true">
+  <Card title="임무 상태" :show-header-slot="false">
     <template #header-actions>
       <DownloadHistoryBtn />
     </template>

@@ -84,8 +84,48 @@ const handleCommandSubmit = async (command: string) => {
       detectedObjects: objects.value,
       myTanks: myTanks.value,
       targetPosition: targetPos ? { x: targetPos.x, y: targetPos.y } : undefined,
-      fireHistory: fires.value
+      fireHistory: fires.value,
+      operationName: missionReport.value.operationName,
+      commander: missionReport.value.commander
     });
+    
+    // multi 타입이면 각 명령을 순서대로 처리
+    if (result.type === 'multi' && result.commands && result.commands.length > 0) {
+      commandHistory.value.push({
+        id: commandIdCounter++,
+        command: result.message,
+        timestamp,
+        type: 'output'
+      });
+      scrollToBottom();
+      
+      // 각 명령을 순서대로 처리
+      for (const cmd of result.commands) {
+        const singleResult = { ...cmd, type: cmd.type as any, message: cmd.message || '' };
+        await handleSingleCommand(singleResult);
+      }
+      return;
+    }
+    
+    // 단일 명령 처리
+    await handleSingleCommand(result);
+  } catch (error) {
+    // 에러 처리
+    commandHistory.value.push({
+      id: commandIdCounter++,
+      command: 'LLM 처리 중 오류가 발생했습니다',
+      timestamp,
+      type: 'error'
+    });
+    scrollToBottom();
+    console.error('[CommandPanel] LLM 처리 오류:', error);
+  }
+};
+
+// 단일 명령 처리 함수
+const handleSingleCommand = async (result: any) => {
+    const now = new Date();
+    const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
     
     // relative_command 타입이면 좌표 계산
     if (result.type === 'relative_command' && result.target && result.mission) {
@@ -172,6 +212,16 @@ const handleCommandSubmit = async (command: string) => {
       }
     }
     
+    // config 타입이면 작전명/지휘관 변경
+    if (result.type === 'config') {
+      if (result.operationName) {
+        statusReportStore.setOperationName(result.operationName);
+      }
+      if (result.commander) {
+        statusReportStore.setCommander(result.commander);
+      }
+    }
+    
     // LLM 응답 추가
     commandHistory.value.push({
       id: commandIdCounter++,
@@ -201,17 +251,6 @@ const handleCommandSubmit = async (command: string) => {
         scrollToBottom();
       }
     }
-  } catch (error) {
-    // 에러 처리
-    commandHistory.value.push({
-      id: commandIdCounter++,
-      command: 'LLM 처리 중 오류가 발생했습니다',
-      timestamp,
-      type: 'error'
-    });
-    scrollToBottom();
-    console.error('[CommandPanel] LLM 처리 오류:', error);
-  }
 };
 </script>
 

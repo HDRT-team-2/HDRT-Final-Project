@@ -66,7 +66,6 @@ export const useStatusReportStore = defineStore('statusReport', () => {
   }
 
   const setTargetPosition = (x: number, y: number) => {
-    console.log('미션 상태 스토어 - 목표 위치 설정:', { x, y })
     missionReport.value.targetPosition = { x, y }
   }
 
