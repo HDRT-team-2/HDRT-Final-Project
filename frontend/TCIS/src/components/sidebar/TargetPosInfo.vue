@@ -9,21 +9,21 @@ import { useStatusReportStore } from '@/stores/mission-status-store'
 
 // Store 연결
 const statusReportStore = useStatusReportStore()
-// 반응형으로 commandTarget 가져오기
-const { commandTarget } = storeToRefs(statusReportStore)
+// 반응형으로 missionReport 가져오기
+const { missionReport } = storeToRefs(statusReportStore)
 
 // X 위치 값
 const xPosition = computed(() => {
-  if (commandTarget.value && typeof commandTarget.value.x === 'number') {
-    return commandTarget.value.x.toFixed(3)
+  if (missionReport.value.targetPosition && typeof missionReport.value.targetPosition.x === 'number') {
+    return missionReport.value.targetPosition.x.toFixed(3)
   }
   return '0.000'
 })
 
 // Y 위치 값
 const yPosition = computed(() => {
-  if (commandTarget.value && typeof commandTarget.value.y === 'number') {
-    return commandTarget.value.y.toFixed(3)
+  if (missionReport.value.targetPosition && typeof missionReport.value.targetPosition.y === 'number') {
+    return missionReport.value.targetPosition.y.toFixed(3)
   }
   return '0.000'
 })

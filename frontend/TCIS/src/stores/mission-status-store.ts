@@ -29,7 +29,7 @@ export const useStatusReportStore = defineStore('statusReport', () => {
     commander: '신중건',
     mission: '방어',
     objective: '현재 전면전 개시 2일차로 아군, 적군간 대화력전이 실시되고 있는 상황.\n적 기갑부대는 남방한계선 북측 20km 지점까지 남하하였으며 아군은 공격개시선 남측 10km 지점에서 공격명령 대기중.\n아군의 임무는 남하하는 적 기갑부대를 격멸하고 목표지점인 00을 확보하는 것.',
-    targetPosition: null
+    targetPosition: { x: 0, y: 0 }
   })
 
   // 프론트에서 명령한 목표 (API 전송용)

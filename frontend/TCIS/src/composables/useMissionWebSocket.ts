@@ -46,7 +46,6 @@ export function useMissionWebSocket() {
           // mission-status-store에 목표 위치 및 commandTarget 저장
           if (mission_type && x !== undefined && y !== undefined) {
             statusReportStore.setTargetPosition(x, y)
-            statusReportStore.setCommandTarget(x, y, mission_type)
             console.log('목표 위치 및 commandTarget 저장 완료:', { x, y, mission: mission_type })
           }
         }
