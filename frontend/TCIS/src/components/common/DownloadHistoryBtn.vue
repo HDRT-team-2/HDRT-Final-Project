@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useDownloadHistory } from '@/composables/useDownloadHistory'
 
 const { isDownloading, error, fetchHistory } = useDownloadHistory()
 const showDropdown = ref(false)
+const dropdownRef = ref<HTMLElement | null>(null)
 
 /**
  * JSON 데이터를 CSV로 변환
@@ -88,22 +89,36 @@ async function handleDownloadExcel() {
 const toggleDropdown = () => {
   showDropdown.value = !showDropdown.value
 }
+
+// 외부 클릭 감지
+const handleClickOutside = (event: MouseEvent) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+    showDropdown.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <template>
-  <div class="download-dropdown" v-click-outside="() => showDropdown = false">
+  <div class="relative inline-block" ref="dropdownRef">
     <!-- 다운로드 아이콘 버튼 -->
     <button 
       @click="toggleDropdown"
-      class="download-icon-btn"
       :disabled="isDownloading"
-      :class="{ 'loading': isDownloading }"
+      class="text-white hover:opacity-80 active:opacity-60 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed border-0 bg-transparent outline-none p-0"
     >
       <svg 
         v-if="!isDownloading"
         xmlns="http://www.w3.org/2000/svg" 
-        width="18" 
-        height="18" 
+        width="16" 
+        height="16" 
         viewBox="0 0 24 24" 
         fill="none" 
         stroke="currentColor" 
@@ -117,10 +132,10 @@ const toggleDropdown = () => {
       </svg>
       <svg 
         v-else
-        class="spinner"
+        class="animate-spin"
         xmlns="http://www.w3.org/2000/svg" 
-        width="18" 
-        height="18" 
+        width="16" 
+        height="16" 
         viewBox="0 0 24 24" 
         fill="none" 
         stroke="currentColor" 
@@ -134,15 +149,24 @@ const toggleDropdown = () => {
     </button>
 
     <!-- 드롭다운 메뉴 -->
-    <div v-if="showDropdown" class="dropdown-menu">
-      <button @click="handleDownloadCSV" class="dropdown-item">
+    <div 
+      v-if="showDropdown" 
+      class="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg min-w-[160px] z-50 overflow-hidden"
+    >
+      <button 
+        @click="handleDownloadCSV" 
+        class="w-full flex items-center gap-2 px-3.5 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
           <polyline points="14 2 14 8 20 8"></polyline>
         </svg>
         CSV 다운로드
       </button>
-      <button @click="handleDownloadExcel" class="dropdown-item">
+      <button 
+        @click="handleDownloadExcel" 
+        class="w-full flex items-center gap-2 px-3.5 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
           <polyline points="14 2 14 8 20 8"></polyline>
@@ -152,87 +176,3 @@ const toggleDropdown = () => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.download-dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.download-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.375rem;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.download-icon-btn:hover:not(.loading) {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-.download-icon-btn:active:not(.loading) {
-  transform: translateY(0);
-}
-
-.download-icon-btn.loading {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.spinner {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  min-width: 160px;
-  z-index: 1000;
-  overflow: hidden;
-}
-
-.dropdown-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 0.875rem;
-  background: white;
-  border: none;
-  text-align: left;
-  font-size: 0.875rem;
-  color: #374151;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.dropdown-item:hover {
-  background: #f3f4f6;
-}
-
-.dropdown-item:not(:last-child) {
-  border-bottom: 1px solid #f3f4f6;
-}
-</style>
