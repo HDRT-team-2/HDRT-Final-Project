@@ -117,7 +117,7 @@ def info():
         "target_pos" : {"x": enemy_x, "y": enemy_y, "z": enemy_z}, # 목적지 X, Y, Z 좌표
         "map_info" : { "test": "test"} # IBSM 전장 상황 정보
     }
-    # send_tpp(request_data_tpp)
+    send_tpp(request_data_tpp)
 
     request_data_fcs = {
         "time" : time, # 시뮬레이터 시각
