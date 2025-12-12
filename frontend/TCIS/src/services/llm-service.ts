@@ -77,8 +77,10 @@ const SYSTEM_PROMPT = `군사 AI. 존댓말 사용. JSON만 출력.
 
 3. 질문 → type:"answer"
    - 컨텍스트 정보만 사용. 없으면 "정보 없습니다"
-   - "적 몇", "적 갯수", "적 개수" → 탐지된 적 전체 정보
+   - "적 몇", "적 갯수", "적 개수" → 살아있는 적 (적전차N, 적보병N)
+   - "제거한 적", "사망한 적", "죽은 적" → 제거한 적 (제거한전차N, 제거한보병N)
    예: {"type":"answer","message":"적 전차 2대 (100,50), (120,60)입니다"}
+   예: {"type":"answer","message":"제거한 적 전차 3대, 보병 5명입니다"}
 
 4. 작전명/지휘관 설정/변경 → type:"config"
    - "작전명", "지휘관", "지시자" (지시자=지휘관) 키워드 포함
@@ -130,8 +132,8 @@ function buildContextInfo(context?: LLMContext): string {
     parts.push(`내위치:(${Math.round(t.x)},${Math.round(t.y)})`)
   }
 
-  // 목표 위치 (0,0이 아닐 때만, 임무에 따라 이름 변경)
-  if (context.targetPosition && (context.targetPosition.x !== 0 || context.targetPosition.y !== 0)) {
+  // 목표 위치 (있으면, 임무에 따라 이름 변경)
+  if (context.targetPosition) {
     const targetLabel = missionKorean === '방어' ? '방어위치' : missionKorean === '공격' ? '공격위치' : '목표'
     parts.push(`${targetLabel}:(${Math.round(context.targetPosition.x)},${Math.round(context.targetPosition.y)})`)
   }
@@ -141,6 +143,8 @@ function buildContextInfo(context?: LLMContext): string {
     const objs = context.detectedObjects
     const enemyTanks = objs.filter(obj => (obj.class_name === 'tank' || obj.class_name === 'tank_around') && obj.alive)
     const enemyInfantry = objs.filter(obj => (obj.class_name === 'human' || obj.class_name === 'human_around') && obj.alive)
+    const deadEnemyTanks = objs.filter(obj => (obj.class_name === 'tank' || obj.class_name === 'tank_around') && !obj.alive)
+    const deadEnemyInfantry = objs.filter(obj => (obj.class_name === 'human' || obj.class_name === 'human_around') && !obj.alive)
     const obstacles = objs.filter(obj => ['rock_small', 'rock_large', 'wall', 'mine', 'other'].includes(obj.class_name))
     console.log('[LLM Context] 전체 객체:', objs.length, '장애물:', obstacles.length, obstacles.map(o => o.class_name))
     const vehicles = objs.filter(obj => ['car', 'truck'].includes(obj.class_name))
@@ -154,6 +158,12 @@ function buildContextInfo(context?: LLMContext): string {
     if (enemyInfantry.length > 0) {
       const positions = enemyInfantry.map(t => `(${Math.round(t.position.x)},${Math.round(t.position.y)})`).join(',')
       summary.push(`적보병${enemyInfantry.length}[${positions}]`)
+    }
+    if (deadEnemyTanks.length > 0) {
+      summary.push(`제거한전차${deadEnemyTanks.length}`)
+    }
+    if (deadEnemyInfantry.length > 0) {
+      summary.push(`제거한보병${deadEnemyInfantry.length}`)
     }
     if (obstacles.length > 0) summary.push(`장애물:${obstacles.length}개`)
     if (vehicles.length > 0) summary.push(`차량:${vehicles.length}개`)

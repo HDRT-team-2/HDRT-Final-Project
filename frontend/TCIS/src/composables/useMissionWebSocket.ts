@@ -36,7 +36,7 @@ export function useMissionWebSocket() {
           const missionData = data.mission
           const { type: mission_type, x, y } = missionData
           
-          console.log('미션 데이터 수신:', { mission_type, x, y })
+          // console.log('미션 데이터 수신:', { mission_type, x, y })
           
           // mission-status-store에 미션 타입 저장
           if (mission_type) {

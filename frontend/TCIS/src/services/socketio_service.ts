@@ -51,7 +51,7 @@ export class SocketIOService {
       // 메시지 수신
       this.socket.on(eventName, (data: any) => {
         if (this.debug) {
-          if (eventName !== 'position' && eventName !== 'detection')  // 너무 빈번한 메시지는 제외{
+          if (eventName !== 'position' && eventName !== 'mission')  // 너무 빈번한 메시지는 제외{
           console.log(`[SocketIO] 메시지 수신 (${eventName}):`, data)
         }
         onMessage(data)

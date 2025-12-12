@@ -131,29 +131,66 @@ const handleSingleCommand = async (result: any) => {
     if (result.type === 'relative_command' && result.target && result.mission) {
       const myPos = myTanks.value.length > 0 ? myTanks.value[0] : { x: 0, y: 0 };
       
-      // 대상 적 필터링
-      let enemies = objects.value.filter(obj => obj.alive);
-      if (result.targetType === 'tank') {
-        enemies = enemies.filter(obj => obj.class_name === 'tank' || obj.class_name === 'tank_around');
-      } else if (result.targetType === 'infantry') {
-        enemies = enemies.filter(obj => obj.class_name === 'human' || obj.class_name === 'human_around');
+      // 방어 명령이면 지도 좌표 기준으로 처리
+      if (result.mission === 'defense') {
+        let targetX: number, targetY: number;
+        
+        if (result.target === 'center_enemy') {
+          // 중앙 방어: 150, 150
+          targetX = 150;
+          targetY = 150;
+        } else if (result.target === 'topmost_enemy') {
+          // 최상단 방어: y = 300
+          targetX = 150;
+          targetY = 300;
+        } else if (result.target === 'bottommost_enemy') {
+          // 최하단 방어: y = 0
+          targetX = 150;
+          targetY = 0;
+        } else if (result.target === 'leftmost_enemy') {
+          // 최좌측 방어: x = 0
+          targetX = 0;
+          targetY = 150;
+        } else if (result.target === 'rightmost_enemy') {
+          // 최우측 방어: x = 300
+          targetX = 300;
+          targetY = 150;
+        } else {
+          // 기본 (closest/farthest): 아군 위치 방어
+          targetX = Math.round(myPos.x);
+          targetY = Math.round(myPos.y);
+        }
+        
+        // 계산된 좌표로 command 실행
+        result.type = 'command';
+        result.x = targetX;
+        result.y = targetY;
+        result.message = `${result.message || '방어 위치 설정'} - 목표: (${targetX}, ${targetY})`;
       } else {
-        // any: 전차 또는 보병
-        enemies = enemies.filter(obj => 
-          ['tank', 'tank_around', 'human', 'human_around'].includes(obj.class_name)
-        );
-      }
-      
-      if (enemies.length === 0) {
-        commandHistory.value.push({
-          id: commandIdCounter++,
-          command: '대상 적이 없습니다',
-          timestamp,
-          type: 'error'
-        });
-        scrollToBottom();
-      } else {
-        let targetEnemy;
+        // 공격/수색 명령이면 적 기준으로 처리
+        // 대상 적 필터링
+        let enemies = objects.value.filter(obj => obj.alive);
+        if (result.targetType === 'tank') {
+          enemies = enemies.filter(obj => obj.class_name === 'tank' || obj.class_name === 'tank_around');
+        } else if (result.targetType === 'infantry') {
+          enemies = enemies.filter(obj => obj.class_name === 'human' || obj.class_name === 'human_around');
+        } else {
+          // any: 전차 또는 보병
+          enemies = enemies.filter(obj => 
+            ['tank', 'tank_around', 'human', 'human_around'].includes(obj.class_name)
+          );
+        }
+        
+        if (enemies.length === 0) {
+          commandHistory.value.push({
+            id: commandIdCounter++,
+            command: '대상 적이 없습니다',
+            timestamp,
+            type: 'error'
+          });
+          scrollToBottom();
+        } else {
+          let targetEnemy;
         
         if (result.target === 'closest_enemy') {
           // 가장 가까운 적
@@ -192,22 +229,23 @@ const handleSingleCommand = async (result: any) => {
           targetEnemy = enemies.reduce((leftmost, enemy) => 
             enemy.position.x < leftmost.position.x ? enemy : leftmost
           );
-        } else if (result.target === 'rightmost_enemy') {
-          // 최우측 (x 최대)
-          targetEnemy = enemies.reduce((rightmost, enemy) => 
-            enemy.position.x > rightmost.position.x ? enemy : rightmost
-          );
-        }
-        
-        if (targetEnemy) {
-          const targetX = Math.round(targetEnemy.position.x);
-          const targetY = Math.round(targetEnemy.position.y);
+          } else if (result.target === 'rightmost_enemy') {
+            // 최우측 (x 최대)
+            targetEnemy = enemies.reduce((rightmost, enemy) => 
+              enemy.position.x > rightmost.position.x ? enemy : rightmost
+            );
+          }
           
-          // 계산된 좌표로 command 실행
-          result.type = 'command';
-          result.x = targetX;
-          result.y = targetY;
-          result.message = `${result.message || '목표 설정'} - 목표: (${targetX}, ${targetY})`;
+          if (targetEnemy) {
+            const targetX = Math.round(targetEnemy.position.x);
+            const targetY = Math.round(targetEnemy.position.y);
+            
+            // 계산된 좌표로 command 실행
+            result.type = 'command';
+            result.x = targetX;
+            result.y = targetY;
+            result.message = `${result.message || '목표 설정'} - 목표: (${targetX}, ${targetY})`;
+          }
         }
       }
     }

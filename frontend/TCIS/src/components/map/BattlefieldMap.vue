@@ -23,9 +23,9 @@ const { missionReport } = storeToRefs(statusReportStore)
 const target = computed(() => missionReport.value.targetPosition)
 watch(target, (newTarget) => {
   if (newTarget) {
-    console.log('목표 위치 변경됨:', newTarget.x, newTarget.y)
+    // console.log('목표 위치 변경됨:', newTarget.x, newTarget.y)
   } else {
-    console.log('목표 위치가 제거됨')
+    // console.log('목표 위치가 제거됨')
   }
 }, { immediate: true, deep: true })
 
