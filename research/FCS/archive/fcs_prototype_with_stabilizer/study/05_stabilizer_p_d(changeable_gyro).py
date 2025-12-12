@@ -37,25 +37,10 @@ prev_turret_y   = None   # 이전 프레임 포탑 pitch
 # 웨이포인트 전환 완충용
 wp_switch_cooldown = 0
 
-# W 기반 기하학 미래예측용 상수
-PREDICT_NOMINAL_MAX_SPEED = 25.0   
-PREDICT_BASE_HORIZON      = 0.30   
-PREDICT_MAX_HORIZON       = 0.80   
-PREDICT_ALPHA_YAW         = 0.60   
-
 ########################### FCS용 전역변수 ###############################
 altitude_df = None              # csv 파일을 데이터프레임화 시킨 것을 저장할 전역 변수
 altitude_grid = None            # altitude_df를 numpy 2d grid화 시킨 것을 저장할 전역변수
 altitude_grid_shape = None      # (y크기, x크기) 형태로 그리드 크기 저장할 전역변수
-
-
-# 함수 외부에서 값을 기억하기 위해 선언 
-prev_enemy_x = None         # 이전 적 X
-prev_enemy_y = None         # 이전 적 Y 
-prev_enemy_z = None         # 이전 적 Z
-cached_move_x = None        # 계산해둔 이동 X
-cached_move_y = None        # 계산해둔 이동 Y 
-cached_move_z = None        # 계산해둔 이동 Z
 
 ########################### 스태빌라이저 기능 #############################
 def normalize_angle_deg(angle: float) -> float:
@@ -64,61 +49,58 @@ def normalize_angle_deg(angle: float) -> float:
 
 class TurretYawStabilizer:
     """
-    [수정됨] P + Gyro Damping + Feed-Forward 제어기
-    - I(적분) 제거: 반응성 향상, 오버슈트 제거
-    - Gyro Damping: 외부 충격(지형)에 대한 즉각적인 저항
+    [최종 완성형] P + 가변 D(1.5도) + FF(AD 역보상) 제어기
+    1. P 제어: 목표 각도를 향해 회전 (기본 추적)
+    2. FF 제어: 차체 선회(A/D) 입력 시 즉시 반대 힘 생성 (반응성 극대화)
+    3. 가변 D 제어: 목표 도달 직전에만 브레이크 작동 (오버슈트/떨림 방지)
     """
     def __init__(self):
-        # dt & gyro 계산용 상태
+        # dt & gyro 계산용 상태 변수
         self.prev_time     = None
         self.prev_turret_x = None
         self.prev_turret_y = None
 
-        # [삭제됨] 적분(I) 관련 변수들 (yaw_int, limits 등) 제거
+        # ================= [튜닝 파라미터] =================
+        # 1. P게인 (Main Power): 목표를 쫓아가는 힘
+        self.Kp_yaw       = 0.045   
 
-        # 파라미터 (튜닝포인트)
-        self.Kp_yaw       = 0.045   # P게인: 목표를 쫓아가는 힘
-        self.Kd_yaw_gyro  = 0.015   # D게인: 흔들림을 잡아주는 힘 (자이로 감쇠)
+        # 2. FF게인 (AD 역보상): 차체 회전력을 상쇄하는 힘
+        # 차체가 도는 속도와 비슷하게 맞춰야 조준이 고정됨 (0.5 ~ 1.2 추천)
+        self.Kff_ad       = 1.0     
+
+        # 3. D게인 (Braking): 멈출 때 잡아주는 힘
+        # 값이 클수록 끈적하게 멈추고, 작으면 멈출 때 덜렁거림
+        self.Kd_yaw_gyro  = 0.003   
+
+        # 4. 브레이크 구간 (가변 D 적용 범위)
+        # 목표 오차가 이 각도(도) 이내일 때만 D제어가 켜짐
+        self.BRAKING_ZONE = 1.5     
+        # ===================================================
 
         self.YAW_DEADBAND   = 0.5
         self.GYRO_DEADBAND  = 1.0
-        self.AD_DEADBAND    = 0.05
         self.MAX_QE         = 1.0
         self.MIN_QE_OUTPUT  = 0.02
-
-        # [추가] 미래 예측 튀는 것 방지용 상수
-        self.MAX_GEOM_DELTA = 12.0
 
     # ------------------------------------------------------------------
     # 시간 / 자이로 계산
     # ------------------------------------------------------------------
     def _compute_dt_and_gyro(self, time_val, turret_x, turret_y):
-        # 기본 dt (fallback)
-        dt = 0.016
+        # [중요] 통신 딜레이로 인한 미분값 튐 방지를 위해 고정 dt 사용 권장
+        calc_dt = 0.016 
+        self.prev_time = time_val
 
-        # dt 계산
-        if self.prev_time is None:
-            self.prev_time = time_val
-        else:
-            dt_raw = time_val - self.prev_time
-            if dt_raw > 0:
-                dt = dt_raw
-            self.prev_time = time_val
-
-        # 각속도 계산
-        if self.prev_turret_x is None or self.prev_turret_y is None:
+        # 각속도(자이로) 계산
+        if self.prev_turret_x is None:
             gyro_yaw_rate = 0.0
         else:
             dyaw = normalize_angle_deg(turret_x - self.prev_turret_x)
-            if dt > 0.0:
-                gyro_yaw_rate = dyaw / dt
-            else:
-                gyro_yaw_rate = 0.0
+            gyro_yaw_rate = dyaw / calc_dt 
 
         self.prev_turret_x = turret_x
         self.prev_turret_y = turret_y
 
-        return dt, gyro_yaw_rate
+        return calc_dt, gyro_yaw_rate
 
     # ------------------------------------------------------------------
     # 메인 Yaw 제어 (QE_command / QE_weight 계산)
@@ -140,90 +122,62 @@ class TurretYawStabilizer:
         player_speed: float,
         body_WS_weight: float = 0.0 # [추가] 전진 가중치
     ):
-        # dt / 자이로 계산
+        # 1. 자이로(회전속도) 계산
         dt, gyro_yaw_rate = self._compute_dt_and_gyro(time_val, player_turret_x, 0.0)
 
-        # 1) 타겟까지의 yaw 오차 계산
+        # 2. 타겟 오차(Error) 계산
         dx = target_x - player_x
         dz = target_z - player_z
-        
-        # atan2(dx, dz): IBSM 좌표계 기준
         target_yaw = math.degrees(math.atan2(dx, dz))
         if target_yaw < 0:
             target_yaw += 360.0
 
         yaw_err_now = normalize_angle_deg(target_yaw - player_turret_x)
+
+        # 3. 데드밴드 체크 (오차도 작고, 움직임도 거의 없으면 휴식)
+        # 단, 키보드를 누르고 있다면(FF 필요 시) 멈추면 안 됨
+        if abs(yaw_err_now) < self.YAW_DEADBAND and abs(gyro_yaw_rate) < self.GYRO_DEADBAND:
+            if body_AD_weight < 0.1: # 키 입력도 없을 때만 리턴
+                return "", 0.0
+
+        # ================= [제어 로직 핵심] =================
         
-        # ---------------------------------------------------------
-        # [복구됨] 기하학적 미래 예측 (W Prediction)
-        # ---------------------------------------------------------
-        yaw_err_target = yaw_err_now
+        # (A) P 제어: 오차에 비례하여 이동
+        P = self.Kp_yaw * yaw_err_now
         
-        # 전진 중일 때만 예측 수행
-        eff_weight = body_WS_weight if body_WS_weight > 0 else (player_speed / PREDICT_NOMINAL_MAX_SPEED)
-        
-        if eff_weight > 0.01 and player_speed > 0.1:
-            horizon = PREDICT_BASE_HORIZON + (PREDICT_MAX_HORIZON - PREDICT_BASE_HORIZON) * eff_weight
-            horizon = max(0.10, min(horizon, PREDICT_MAX_HORIZON))
+        # (B) FF 제어 (AD 역보상): 키 입력 즉시 반대 방향 힘 생성
+        # 차체가 왼쪽(A)으로 돌면 -> 포탑은 오른쪽(E, +)으로 돌아야 제자리 유지
+        # 차체가 오른쪽(D)으로 돌면 -> 포탑은 왼쪽(Q, -)으로 돌아야 제자리 유지
+        FF = 0.0
+        if body_AD_cmd == "A":
+            FF = self.Kff_ad * body_AD_weight
+        elif body_AD_cmd == "D":
+            FF = -self.Kff_ad * body_AD_weight
 
-            forward_dist = player_speed * horizon
-            heading_rad = math.radians(body_yaw)
-            
-            # 미래 위치
-            future_x = player_x + forward_dist * math.sin(heading_rad)
-            future_z = player_z + forward_dist * math.cos(heading_rad)
+        # (C) 가변 D 제어 (Smart Braking)
+        # 평소에는 저항 없이(0) 돌다가, 목표 근처(BRAKING_ZONE)에서만 저항(-Kd) 발생
+        D = 0.0
+        if abs(yaw_err_now) < self.BRAKING_ZONE:
+            # 목표에 거의 다 왔음 -> 자이로 브레이크 가동!
+            D = -self.Kd_yaw_gyro * gyro_yaw_rate
+        else:
+            # 아직 멀었음 -> 브레이크 해제, P+FF 풀파워로 회전
+            D = 0.0
 
-            # 미래 타겟 각도
-            dx_f = target_x - future_x
-            dz_f = target_z - future_z
-            target_yaw_f = math.degrees(math.atan2(dx_f, dz_f))
-            if target_yaw_f < 0: target_yaw_f += 360.0
+        # (D) 최종 합산
+        u = P + FF + D
 
-            err_f_raw = normalize_angle_deg(target_yaw_f - player_turret_x)
-            
-            # 튀는 값 방지 (Outlier Filter)
-            delta_f = normalize_angle_deg(err_f_raw - yaw_err_now)
-            if abs(delta_f) > self.MAX_GEOM_DELTA:
-                # 너무 튀면 현재값 기준 제한된 만큼만 이동
-                yaw_err_target = yaw_err_now + self.MAX_GEOM_DELTA * math.copysign(1.0, delta_f)
-            else:
-                # 예측값과 현재값을 블렌딩 (Alpha 0.6)
-                yaw_err_target = (1.0 - PREDICT_ALPHA_YAW) * yaw_err_now + PREDICT_ALPHA_YAW * err_f_raw
+        # ====================================================
 
-        # 2) Deadband Check
-        if abs(yaw_err_target) < self.YAW_DEADBAND and abs(gyro_yaw_rate) < self.GYRO_DEADBAND:
-            return "", 0.0
+        # 4. 출력 제한 (Clamp)
+        if u > self.MAX_QE: u = self.MAX_QE
+        elif u < -self.MAX_QE: u = -self.MAX_QE
 
-        # 3) Feed-Forward (AD 보상)
-        u_ff = 0.0
-        K_FF_AD = 0.4
-        if body_AD_cmd == "D":
-            u_ff = -K_FF_AD * float(body_AD_weight)
-        elif body_AD_cmd == "A":
-            u_ff = +K_FF_AD * float(body_AD_weight)
-
-        # 4) P-Gyro Control Calculation (I 제거됨)
-        # P 제어: 목표 지향
-        P = self.Kp_yaw * yaw_err_target
-        
-        # D 제어: 자이로(속도) 감쇠 (Active Damping)
-        # 오차의 미분이 아니라, 현재 회전 속도를 반대로 억제함
-        D = -self.Kd_yaw_gyro * gyro_yaw_rate 
-
-        # 최종 합산
-        u = P + D + u_ff
-
-        # 5) 출력 클램프
-        if u > self.MAX_QE:
-            u = self.MAX_QE
-        elif u < -self.MAX_QE:
-            u = -self.MAX_QE
-
-        # 최소 출력 확인
+        # 5. 최소 출력 컷 (너무 작은 값은 무시)
         if abs(u) < self.MIN_QE_OUTPUT:
             return "", 0.0
 
-        # 6) Q / E 결정 (방향이 반대라면 여기서 Q, E를 서로 바꾸세요)
+        # 6. 명령 반환 (양수: E, 음수: Q)
         if u > 0:
             return "E", u
         else:
@@ -397,11 +351,9 @@ def normalize_angle_deg_for_fcs(angle: float) -> float:
 # FCS 기능 메인
 def fcs_function(request_data : dict):
     global rf_command, rf_weight, fire_command, fire_target_pos, new_fire_point
-    global prev_enemy_x, prev_enemy_y, prev_enemy_z
-    global cached_move_x, cached_move_y, cached_move_z
-
+    
     # IBSM으로부터 받아온 request_data들을 사용하기 위해 변수로 저장.
-    data = request_data    
+    data =  request_data    
 
     # 매 프레임 초기화 (stale 값 방지)
     rf_command = ""
@@ -521,6 +473,11 @@ def fcs_function(request_data : dict):
 
     can_fire_now = has_solution and elev_ok and yaw_aligned and pitch_aligned
 
+    """
+    수정사항 : previous 좌표를 저장해서 오차값 5%이내에 일치하면 그 좌표로 이동하게
+
+    """
+
     # 이동해야 할 위치 계산 후, x,y 좌표를 반환하는 계산기 매서드 (적 전차 방향으로 사정거리만큼 접근)
     def get_move_position(my_x, my_z, enemy_x, enemy_z, move_distance):
         dx = enemy_x - my_x
@@ -536,53 +493,11 @@ def fcs_function(request_data : dict):
     need_move_for_range = (horizontal_distance > range_10deg)
     need_move_for_elev = not elev_ok  # 고각 제한 밖이면 위치를 바꿀 필요가 있다고 가정
 
-    # 현재 사격이동좌표가 계속 변동이 일어나 이것을 저장하고 범위내(5%)에 일정하면 저장된 좌표로 이동하는걸로 계산
     if not can_fire_now and (need_move_for_range or need_move_for_elev):
         fire_command = False
-        
-        use_cached_data = False 
-
-        # 1. 이전에 저장된 적 좌표(X, Y, Z)가 모두 있는지 확인
-        if (prev_enemy_x is not None and 
-            prev_enemy_y is not None and 
-            prev_enemy_z is not None):
-            
-            # 2. 오차 범위(5%) 계산 (Y 포함)
-            margin_x = max(abs(prev_enemy_x * 0.05), 0.1)
-            margin_y = max(abs(prev_enemy_y * 0.05), 0.1)
-            margin_z = max(abs(prev_enemy_z * 0.05), 0.1)
-
-            # 3. 현재 적 위치와 이전 적 위치 차이 계산
-            diff_x = abs(enemy_pos_x - prev_enemy_x)
-            diff_y = abs(enemy_pos_y - prev_enemy_y)
-            diff_z = abs(enemy_pos_z - prev_enemy_z)
-
-            # 4. X, Y, Z 모두 오차 범위 이내여야 함
-            if (diff_x <= margin_x and 
-                diff_y <= margin_y and 
-                diff_z <= margin_z):
-                use_cached_data = True
-
-        # 분기 처리
-        if use_cached_data:
-            # 저장해뒀던 X, Y(h), Z 모두 재사용
-            move_x = cached_move_x
-            h      = cached_move_y  # 저장해둔 높이값 불러오기
-            move_z = cached_move_z
-            
-        else:
-            move_x, move_z = get_move_position(my_pos_x, my_pos_z, enemy_pos_x, enemy_pos_z, range_10deg)
-            h = altitude_calculator(move_x, move_z) # 높이 계산
-            
-            # 적 좌표(Y포함)와 결과값(h포함) 저장
-            prev_enemy_x = enemy_pos_x
-            prev_enemy_y = enemy_pos_y  # 현재 적 Y 저장
-            prev_enemy_z = enemy_pos_z
-            
-            cached_move_x = move_x
-            cached_move_y = h           # 계산된 높이 저장
-            cached_move_z = move_z
-
+        # 적 방향으로 range_10deg 만큼 떨어진 지점으로 접근 제안
+        move_x, move_z = get_move_position(my_pos_x, my_pos_z, enemy_pos_x, enemy_pos_z, range_10deg)
+        h = altitude_calculator(move_x, move_z)
         new_fire_point = {
             "x": move_x,
             "y": h,
@@ -624,7 +539,6 @@ def get_fcs():
 
     # 호출자(IBSM)에게 결과 반환
     return jsonify(response_data)
-
 
 ################################ 메인매서드 ################################
 if __name__ == "__main__":
