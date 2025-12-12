@@ -142,7 +142,10 @@ function handleContextMenu(event: MouseEvent) {
     <!-- 포물선 애니메이션 -->
     <TrajectoryArcs :my-tanks="myTanks" :coord-to-svg="coordToSvg" />
     
-    <!-- 목표 위치 (있으면) -->
+    <!-- 탐지된 객체들 -->
+    <DetectedObjects :objects="objects" :coord-to-svg="coordToSvg" />
+    
+    <!-- 목표 위치 (장애물보다 위에 표시) -->
     <GoalIcon
       v-if="target"
       :x="coordToSvg(target.x, target.y).x"
@@ -150,9 +153,6 @@ function handleContextMenu(event: MouseEvent) {
       :size="18"
       :is-danger="missionReport.mission === '공격'"
     />
-    
-    <!-- 탐지된 객체들 -->
-    <DetectedObjects :objects="objects" :coord-to-svg="coordToSvg" />
     
     <!-- 내 전차들 위치 (마지막에 그려서 맨 위에 표시) -->
     <g v-for="tank in myTanks" :key="tank.tank_id">
