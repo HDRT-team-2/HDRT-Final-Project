@@ -197,11 +197,11 @@ def object_detection(img):
                 'confidence': confidence
             })
         
-        write_log(f"✅ 객체 탐지 완료: {len(detections)}개 탐지")
+        write_log(f" 객체 탐지 완료: {len(detections)}개 탐지")
         return detections
     
     except Exception as e:
-        write_log(f"❌ 객체 탐지 실패: {e}")
+        write_log(f" 객체 탐지 실패: {e}")
         return []
 
 
@@ -281,7 +281,7 @@ def visualize_detections(img, detections, label="detection"):
     
     # 이미지 저장
     cv2.imwrite(filepath, vis_img)
-    write_log(f"📷 탐지 결과 저장: {filepath}")
+    write_log(f" 탐지 결과 저장: {filepath}")
     
     return vis_img
 
@@ -576,7 +576,7 @@ def visualize_matched_objects(img_left, img_right, img_front,
     
     # 이미지 저장
     cv2.imwrite(filepath, combined)
-    write_log(f"🎯 매칭 결과 저장: {filepath}")
+    write_log(f" 매칭 결과 저장: {filepath}")
     
     return combined
 
@@ -622,7 +622,7 @@ def get_vdrs():
     
     # 디코딩 실패 체크
     if img_front is None or img_left is None or img_right is None:
-        write_log("❌ 이미지 디코딩 실패")
+        write_log(" 이미지 디코딩 실패")
         return jsonify({"error": "Image decoding failed"}), 400
     
     # 이미지 저장 (디버깅용)
@@ -630,7 +630,7 @@ def get_vdrs():
         save_img(img_front, ally_body_pos, obstacle_pos, label="front")
         save_img(img_left, ally_body_pos, obstacle_pos, label="left")
         save_img(img_right, ally_body_pos, obstacle_pos, label="right")
-        write_log("✅ 3개 이미지 저장 완료")
+        write_log(" 3개 이미지 저장 완료")
 
     # 02_convert_to_16_9 함수
     write_log("02_convert_to_16_9")
@@ -641,7 +641,7 @@ def get_vdrs():
     if obstacle_pos:  # obstacle_pos가 있을 때만 저장
         save_img(converted_img_left, ally_body_pos, obstacle_pos, label="left_16_9")
         save_img(converted_img_right, ally_body_pos, obstacle_pos, label="right_16_9")
-        write_log("✅ 스테레오 이미지 16:9 변환 후 저장 완료")
+        write_log(" 스테레오 이미지 16:9 변환 후 저장 완료")
 
     # 03_object_detection 함수
     write_log("03_object_detection")
@@ -659,7 +659,7 @@ def get_vdrs():
         visualize_detections(img_front, detections_front, label="front")
         visualize_detections(converted_img_left, detections_left, label="left")
         visualize_detections(converted_img_right, detections_right, label="right")
-        write_log("✅ 탐지 결과 시각화 완료")
+        write_log(" 탐지 결과 시각화 완료")
 
     # 04_filter_center_region 함수 (좌우 175px 제외 영역 필터링)
     write_log("\n04_filter_center_region")
@@ -669,26 +669,26 @@ def get_vdrs():
     detections_left_filtered = filter_center_region(detections_left)
     detections_right_filtered = filter_center_region(detections_right)
     
-    write_log(f"  📷 Front - 필터링 전: {len(detections_front)}개, 필터링 후: {len(detections_front_filtered)}개")
-    write_log(f"  📷 Left  - 필터링 전: {len(detections_left)}개, 필터링 후: {len(detections_left_filtered)}개")
-    write_log(f"  📷 Right - 필터링 전: {len(detections_right)}개, 필터링 후: {len(detections_right_filtered)}개")
+    write_log(f"   Front - 필터링 전: {len(detections_front)}개, 필터링 후: {len(detections_front_filtered)}개")
+    write_log(f"   Left  - 필터링 전: {len(detections_left)}개, 필터링 후: {len(detections_left_filtered)}개")
+    write_log(f"   Right - 필터링 전: {len(detections_right)}개, 필터링 후: {len(detections_right_filtered)}개")
 
     # 05_match_objects 함수
     write_log("\n05_match_objects")
     
     # Step 1: 좌우 스테레오 매칭 (필터링된 이미지 사용)
     stereo_pairs = match_stereo_objects(detections_left_filtered, detections_right_filtered)
-    write_log(f"  ✅ 좌우 매칭: {len(stereo_pairs)}쌍")
+    write_log(f"   좌우 매칭: {len(stereo_pairs)}쌍")
     
     # Step 2: 전면 이미지와 매칭 (필터링된 이미지 사용)
     matched_objects = match_with_front_image(stereo_pairs, detections_front_filtered)
-    write_log(f"  ✅ 전면 매칭: {len(matched_objects)}개")
+    write_log(f"   전면 매칭: {len(matched_objects)}개")
     
     # 매칭 결과 시각화 (디버깅용)
     if obstacle_pos and len(matched_objects) > 0:
         visualize_matched_objects(converted_img_left, converted_img_right, img_front,
                                  matched_objects, label="match")
-        write_log("✅ 매칭 결과 시각화 완료")
+        write_log(" 매칭 결과 시각화 완료")
 
     # Response 데이터 생성 (임시 더미 데이터)
     response_data = [

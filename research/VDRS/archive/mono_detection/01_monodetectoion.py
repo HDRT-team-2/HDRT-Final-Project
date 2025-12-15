@@ -155,11 +155,11 @@ def object_detection(img):
                 'confidence': confidence
             })
         
-        write_log(f"✅ 객체 탐지 완료: {len(detections)}개 탐지")
+        write_log(f" 객체 탐지 완료: {len(detections)}개 탐지")
         return detections
     
     except Exception as e:
-        write_log(f"❌ 객체 탐지 실패: {e}")
+        write_log(f" 객체 탐지 실패: {e}")
         return []
 
 
@@ -242,7 +242,7 @@ def visualize_detections(img, detections, label="detection"):
     
     # 이미지 저장
     cv2.imwrite(filepath, vis_img)
-    write_log(f"📷 탐지 결과 저장: {filepath}")
+    write_log(f" 탐지 결과 저장: {filepath}")
     
     return vis_img
 
@@ -426,7 +426,7 @@ def visualize_range_results(img, range_results, label="range"):
     
     # 이미지 저장
     cv2.imwrite(filepath, vis_img)
-    write_log(f"📏 거리 측정 결과 저장: {filepath}")
+    write_log(f" 거리 측정 결과 저장: {filepath}")
     
     return vis_img
 
@@ -467,15 +467,15 @@ def get_vdrs():
     
     # 디코딩 실패 체크
     if img_front is None:
-        write_log("❌ 이미지 디코딩 실패")
+        write_log(" 이미지 디코딩 실패")
         return jsonify({"error": "Image decoding failed"}), 400
     
-    write_log(f"✅ 이미지 디코딩 완료 - 크기: {img_front.shape[1]}x{img_front.shape[0]}")
+    write_log(f" 이미지 디코딩 완료 - 크기: {img_front.shape[1]}x{img_front.shape[0]}")
     
     # 이미지 저장 (디버깅용)
     if obstacle_pos:  # obstacle_pos가 있을 때만 저장
         save_img(img_front, ally_body_pos, obstacle_pos, label="front")
-        write_log("✅ 전면 이미지 저장 완료")
+        write_log(" 전면 이미지 저장 완료")
 
     # 02_object_detection 함수
     write_log("02_object_detection")
@@ -490,12 +490,11 @@ def get_vdrs():
     # 탐지 결과 시각화 (디버깅용)
     if obstacle_pos:
         visualize_detections(img_front, detections_front, label="front")
-        write_log("✅ 탐지 결과 시각화 완료")
+        write_log(" 탐지 결과 시각화 완료")
         
     #     # 거리 측정 결과 시각화 (디버깅용)
     #     visualize_range_results(img_front, range_results, label="front")
-    #     write_log("✅ 거리 측정 결과 시각화 완료")
-
+    #     write_log(" 거리 측정 결과 시각화 완료")
     # Response 데이터 생성 (임시 더미 데이터)
     response_data = [
         {

@@ -159,11 +159,11 @@ def object_detection(img):
                 'confidence': confidence
             })
         
-        write_log(f"✅ 객체 탐지 완료: {len(detections)}개 탐지")
+        write_log(f" 객체 탐지 완료: {len(detections)}개 탐지")
         return detections
     
     except Exception as e:
-        write_log(f"❌ 객체 탐지 실패: {e}")
+        write_log(f" 객체 탐지 실패: {e}")
         return []
 
 
@@ -246,7 +246,7 @@ def visualize_detections(img, detections, label="detection"):
     
     # 이미지 저장
     cv2.imwrite(filepath, vis_img)
-    write_log(f"📷 탐지 결과 저장: {filepath}")
+    write_log(f" 탐지 결과 저장: {filepath}")
     
     return vis_img
 
@@ -348,7 +348,7 @@ def visualize_manual_measurements(img, detections, actual_distance, label="manua
     
     # 이미지 저장
     cv2.imwrite(filepath, vis_img)
-    write_log(f"📏 수동 측정 결과 저장: {filepath}")
+    write_log(f" 수동 측정 결과 저장: {filepath}")
     
     return vis_img
 
@@ -637,7 +637,7 @@ def visualize_range_results(img, range_results, label="range"):
     
     # 이미지 저장
     cv2.imwrite(filepath, vis_img)
-    write_log(f"📏 거리 측정 결과 저장: {filepath}")
+    write_log(f" 거리 측정 결과 저장: {filepath}")
     
     return vis_img
 
@@ -702,7 +702,7 @@ def calculate_world_coordinates(distance_m, pixel_x, pixel_y,
     world_x = camera_x + rel_x
     world_z = camera_z + rel_z
     
-    write_log(f"🧮 좌표 계산: 거리={distance_m:.2f}m, "
+    write_log(f" 좌표 계산: 거리={distance_m:.2f}m, "
               f"픽셀=({pixel_x:.0f},{pixel_y:.0f}), "
               f"상대각도=({rel_angle_h:.1f}°,{rel_angle_v:.1f}°), "
               f"절대각도={abs_angle:.1f}°, "
@@ -828,7 +828,7 @@ def visualize_world_coordinates(img, position_results, detections, label="world"
     
     # 이미지 저장
     cv2.imwrite(filepath, vis_img)
-    write_log(f"🌍 월드 좌표 결과 저장: {filepath}")
+    write_log(f" 월드 좌표 결과 저장: {filepath}")
     
     return vis_img
 
@@ -869,15 +869,15 @@ def get_vdrs():
     
     # 디코딩 실패 체크
     if img_front is None:
-        write_log("❌ 이미지 디코딩 실패")
+        write_log(" 이미지 디코딩 실패")
         return jsonify({"error": "Image decoding failed"}), 400
     
-    write_log(f"✅ 이미지 디코딩 완료 - 크기: {img_front.shape[1]}x{img_front.shape[0]}")
+    write_log(f" 이미지 디코딩 완료 - 크기: {img_front.shape[1]}x{img_front.shape[0]}")
     
     # 이미지 저장 (디버깅용)
     if obstacle_pos:  # obstacle_pos가 있을 때만 저장
         save_img(img_front, ally_body_pos, obstacle_pos, label="front")
-        write_log("✅ 전면 이미지 저장 완료")
+        write_log(" 전면 이미지 저장 완료")
 
     # 02_object_detection 함수
     write_log("02_object_detection")
@@ -960,14 +960,14 @@ def get_vdrs():
                 'confidence': result['confidence']
             })
             
-            write_log(f"  🎯 {result['class_name']}: "
+            write_log(f"   {result['class_name']}: "
                       f"거리={distance_m:.2f}m, "
                       f"월드=({world_coords['world_x']:.2f}, {world_coords['world_z']:.2f}), "
                       f"각도={world_coords['abs_angle']:.1f}°")
         
-        write_log(f"✅ 월드 좌표 계산 완료: {len(position_results)}개")
+        write_log(f" 월드 좌표 계산 완료: {len(position_results)}개")
     else:
-        write_log("⚠️ 거리 측정 결과 없음 - 월드 좌표 계산 스킵")
+        write_log(" 거리 측정 결과 없음 - 월드 좌표 계산 스킵")
 
     # 탐지 결과 시각화 (디버깅용)
     if obstacle_pos and detections_front:
@@ -978,11 +978,11 @@ def get_vdrs():
         
         # 1단계: 일반 탐지 결과 시각화 (detection_results 폴더)
         visualize_detections(img_front, detections_front, label="front")
-        write_log("✅ [1단계] 탐지 결과 시각화 완료")
+        write_log(" [1단계] 탐지 결과 시각화 완료")
         
         # 2단계: 수동 측정용 시각화 - 캘리브레이션 데이터 수집용 (manual_measurements 폴더)
         visualize_manual_measurements(img_front, detections_front, actual_distance, label="manual")
-        write_log(f"✅ [2단계] 수동 측정 시각화 완료 (실제 거리: {actual_distance:.2f}m)")
+        write_log(f" [2단계] 수동 측정 시각화 완료 (실제 거리: {actual_distance:.2f}m)")
         
         # 3단계: 거리 예측 결과 시각화 (range_results 폴더)
         if position_results:
@@ -1001,11 +1001,11 @@ def get_vdrs():
                 for i, r in enumerate(position_results)
             ]
             visualize_range_results(img_front, range_results_for_viz, label="front")
-            write_log("✅ [3단계] 거리 예측 결과 시각화 완료")
+            write_log(" [3단계] 거리 예측 결과 시각화 완료")
             
             # 4단계: 월드 좌표 시각화 (world_coordinates 폴더)
             visualize_world_coordinates(img_front, position_results, detections_front, label="front")
-            write_log("✅ [4단계] 월드 좌표 시각화 완료")
+            write_log(" [4단계] 월드 좌표 시각화 완료")
 
     # Response 데이터 생성 (실제 탐지 결과)
     response_data = []
