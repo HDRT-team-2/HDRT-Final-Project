@@ -118,6 +118,24 @@ config = {
     }
 
 
-통상상황 3 : 초장거리 사격
+녹화용 상황 : 내가 적보다 앞에 있고, 적은 나보다 뒤에 있는 상황에서, 적에게 포탑을 돌려서 사격
 
+config = {
+        "startMode": "start",  # Options: "start" or "pause"
+        "blStartX": 126.7714,  #Blue Start Position
+        "blStartY": 15,
+        "blStartZ": 186.3636,
+        "rdStartX": 118.6766, #Red Start Position
+        "rdStartY": 11.5,
+        "rdStartZ": 118.9926,
+        "trackingMode": True,
+        "detectMode": False,
+        "logMode": True,
+        "enemyTracking": False,
+        "saveSnapshot": False,
+        "saveStereoCamera" : False,
+        "saveLog": False,
+        "saveLidarData": False,
+        "lux": 30000
+    }
 

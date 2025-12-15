@@ -32,6 +32,7 @@ rf_weight = 0           # 포신 조절 강도
 fire_command = False    # 발사 허가 여부
 fire_target = None  # 조준하고 있는 적의 좌표
 new_fire_point = None   # 사격 불가능 시 이동해야 할 추천 좌표
+enemy_in_range = False  # 적 사정거리 내 존재 여
 
 ######################## 스태빌라이져용 전역변수 ###########################
 # 물체(장애물/적) 조준용 타깃 좌표
@@ -46,7 +47,10 @@ altitude_grid = None            # Numpy 2D 배열 형태의 고도 그리드 (�
 altitude_grid_shape = None      # 그리드 크기 (Max Z, Max X)
 
 # 사격 기록 시간 저장을 위한 전역변수
-last_shoot_log_time = None
+pitch_stuck_start_time = None
+
+# 포구 높이 오프셋 (차체 기준 → 월드 y)
+MUZZLE_HEIGHT_OFFSET = 1.5              # 포구 높이는 정확한 높이를 찾을 때까지 계속 조정 필요.
 
 ########################### 스태빌라이저 기능 #############################
 def normalize_angle_deg(angle: float) -> float:
@@ -481,8 +485,7 @@ def check_trajectory_collision(elevation_angle : float,                    # 발
         z_world = ally_body_pos["z"] + uz * s                              # 포구 위치에서 s만큼 단위벡터 방향으로 이동한 z좌표
 
         # 궤적 y (포신 높이 기준)
-        # 여기서 ally_pos["y"]는 "포구 위치"에 더 가깝게 바꿔주는게 베스트
-        y_traj = (ally_body_pos["y"] + 0.2                                    # 포구의 기본 높이에서 시작해서
+        y_traj = (ally_body_pos["y"]                                       # 포구의 기본 높이에서 시작해서
                   + s * tan                                                # s만큼 전진하며 고각에 따른 상승량을 더하고
                   - (G * s**2) / (2 * muzzle_velocity**2 * cos2))          # 포물선 운동 공식에 따라 중력 때문에 떨어지는 양을 빼줌
 
@@ -523,26 +526,25 @@ def check_trajectory_collision(elevation_angle : float,                    # 발
 # 적과 나의 거리에 따라, 피치 허용오차를 다르게 (멀리 있을수록 뻑뻑하게, 가까이 있을수록 관대하게) 하는 매서드
 def compute_pitch_tolerance_deg(distance_m: float) -> float:               # 수평 거리(m)를 받아 그에 따른 고각 허용 오차(도)를 계산하는 함수 정의
     #수평 거리와 '허용 높이 오차(m)'를 기반으로 허용 수직각 오차(도)를 계산.
-    #가까운 거리에서는 더 빡빡, 멀어질수록 조금 더 느슨하게.
+    #가까운 거리에서는 더 느슨, 멀어질수록 조금 더 빡빡.
 
-    # 1) 거리 → 허용 높이 오차(m) 설계
-    base_err = 0.5       # 근거리에서도 최소 ±0.5m 허용                       # 최소로 허용할 높이차 오차(m)를 0.5로 설정
-    k = 0.02             # 1m 늘어날 때마다 0.02m 추가 (100m 당 2m 증가 느낌)  # 거리가 1m 늘어날 때마다 허용 오차 높이를 0.02m씩 늘리겠다는 의미
-    max_err = 4.0        # 상한: ±4m 이상은 의미 없으니 제한                  # 허용 높이 오차가 4m를 넘지 않도록 상한 설정
+    d = max(distance_m, 0.0)  # 음수 방어
 
-    d = max(distance_m, 0.0)                                               # 거리값이 음수가 들어와도 최소 0 이상으로 만들기 위해 max 사용
-    linear_err = base_err + k * d                                          # 직선적으로 증가하는 허용 높이 오차 = 기본값 + (계수 * 거리)
-    allowed_height_err = min(linear_err, max_err)                          # 계산된 값이 max_err를 넘으면 max_err로 잘라서 사용
+    # 1) 근거리: 매우 관대하게
+    if d <= 30.0:
+        return 3.0  # 근접전은 ±3도까지 허용
 
-    # 2) 높이 오차 → 각도 오차(도) 변환
-    if d < 0.01:                                                           # 거리가 거의 0에 가깝다면
-        # 거의 제자리면, 고각 오차 의미가 크지 않으니 넉넉하게 줘도 됨
-        return 3.0                                                         # 허용 각도 오차를 넉넉하게 3도로 줌
+    # 2) 원거리: 엄격하게
+    if d >= 150.0:
+        return 1.0  # 장거리 사격은 ±1.0도 이내로만
 
-    allowed_angle_rad = math.atan(allowed_height_err / d)                  # atan(허용 높이 오차 / 거리) 로 라디안 값의 허용 각도를 계산
-    allowed_angle_deg = math.degrees(allowed_angle_rad)                    # 이 값을 도 단위로 변환
+    # 3) 중간 거리: 30m ~ 150m 사이를 선형 보간
+    #   d = 30  → 3.0도
+    #   d = 150 → 0.5도
+    t = (d - 30.0) / (150.0 - 30.0)      # 0 ~ 1
+    tolerance = 3.0 + (1.0 - 3.0) * t    # 3.0 → 1.0로 줄어듦
 
-    return max(1.0, allowed_angle_deg)                                     # 허용 각도가 너무 작게 나오면 최소 1도는 보장해서 반환
+    return tolerance
 
 # 사격 시각화를 위한 사격 기록 저장 매서드
 def shooting_record(map_type, ally_body_pos, ibsm_target, elevation_angle):
@@ -593,181 +595,179 @@ def shooting_record(map_type, ally_body_pos, ibsm_target, elevation_angle):
         write_log(f"shooting_record 실행 중 오류: {e}")
 
 # FCS 기능 메인
-def fcs_function(request_data):                                            # IBSM에서 들어온 request_data를 받아, FCS 전체 로직을 실행하는 메인 함수 정의
-    global rf_command, rf_weight, fire_command, fire_target, new_fire_point# 함수를 나오더라도 사용할 전역 변수들을 global로 선언
+def fcs_function(request_data):  # IBSM에서 들어온 request_data를 받아, FCS 전체 로직을 실행하는 메인 함수 정의
+    global rf_command, rf_weight, fire_command, fire_target, new_fire_point, pitch_stuck_start_time, enemy_in_range
 
     # 전역 변수 초기화 (매 요청마다 초기화)
-    rf_command = ""                                                        # 포신 상하(R/F) 명령을 저장할 문자열을 초기화 (처음엔 공백)
-    rf_weight = 0.0                                                        # 포신 상하 강도 값을 0.0으로 초기화
-    fire_command = False                                                   # 사격 명령 플래그를 False로 초기화 (처음엔 쏘지 않음)
-    fire_target = None                                                     # 사격 대상(목표 좌표)을 None으로 초기화
-    new_fire_point = None                                                  # 사격이 안될 때 추천 이동 좌표를 넣을 변수도 None으로 초기화
+    rf_command = ""
+    rf_weight = 0.0
+    fire_command = False
+    fire_target = None
+    new_fire_point = None
+    enemy_in_range = False
 
     # requset_data 파싱
-    time_val        = request_data.get("time", 0.0)                        # request_data에서 "time" 값을 꺼내고, 없으면 0.0 사용
-    ally_body_pos   = request_data.get("ally_body_pos", {})                # 아군 차체 위치 딕셔너리를 가져오고, 없으면 빈 딕셔너리
-    ally_body_angle = request_data.get("ally_body_angle", {})              # 아군 차체 각도 딕셔너리를 가져오고, 없으면 빈 딕셔너리
-    ally_speed      = request_data.get("ally_speed", 0.0)                  # 아군 속도 값을 가져오고, 없으면 0.0
-    ally_turret_angle = request_data.get("ally_turret_angle", {})          # 아군 포탑 각도 딕셔너리를 가져오고, 없으면 빈 딕셔너리
-    ibsm_target     = request_data.get("ibsm_target", {})                  # IBSM이 알려준 목표(적) 좌표 딕셔너리를 가져옴
-    map_type        = request_data.get("map_type", 0)                      # 현재 맵 타입 번호를 가져오고, 없으면 0번 맵으로 가정
-    AD_command      = request_data.get("AD_command", "")                   # 좌우 회전(Q/E) 명령 문자열(예: 'Q', 'E')을 가져옴
-    AD_weight       = request_data.get("AD_weight", 0.0)                   # 좌우 회전 명령의 강도(0~1)를 가져옴
-    WS_command      = request_data.get("WS_command", "")                   # 전후 이동(W/S) 명령 문자열을 가져옴
-    WS_weight       = request_data.get("WS_weight", 0.0)                   # 전후 이동 명령 강도를 가져옴
+    time_val        = request_data.get("time", 0.0)
+    ally_body_pos   = request_data.get("ally_body_pos", {})
+    ally_body_angle = request_data.get("ally_body_angle", {})
+    ally_speed      = request_data.get("ally_speed", 0.0)
+    ally_turret_angle = request_data.get("ally_turret_angle", {})
+    ibsm_target     = request_data.get("ibsm_target", {})
+    map_type        = request_data.get("map_type", 0)
+    AD_command      = request_data.get("AD_command", "")
+    AD_weight       = request_data.get("AD_weight", 0.0)
+    WS_command      = request_data.get("WS_command", "")
+    WS_weight       = request_data.get("WS_weight", 0.0)
+
+    # --- 포구 월드 좌표 ---
+    muzzle_pos = {
+        "x": float(ally_body_pos.get("x", 0.0)),
+        "y": float(ally_body_pos.get("y", 0.0)) + MUZZLE_HEIGHT_OFFSET,
+        "z": float(ally_body_pos.get("z", 0.0)),
+    }
 
     # 고도맵 로딩 (altitude_grid 준비)
-    try:                                                                   # 고도맵을 읽다가 에러가 나더라도 서버가 죽지 않게 try로 감싼다
-        check_maptype(int(map_type))                                       # map_type을 정수로 바꾼 뒤, 그에 맞는 고도맵을 로드
-    except Exception as e:                                                 # 만약 어떤 예외가 발생하면
-        write_log(f"지형 고도맵 로딩 실패: map_type={map_type}, error={e}") # 실패 이유를 로그에 남기고, 고도맵 없이 진행
+    try:
+        check_maptype(int(map_type))
+    except Exception as e:
+        write_log(f"지형 고도맵 로딩 실패: map_type={map_type}, error={e}")
 
     # ---------- 0. 차체 yaw 보정 (수평 방위각용) ----------
-    raw_body_y = ally_body_angle.get('y', 0.0)                             # ally_body_angle 딕셔너리에서 'y'(차체 yaw각)를 가져오고, 없으면 0도
-    corrected_body_y = correct_body_y_angle(raw_body_y)                    # 위에서 만든 correct_body_y_angle 함수를 이용해 버그를 보정
-    write_log(f"ally_body_angle['y'] 원본(yaw): {raw_body_y:.2f} → 보정됨: {corrected_body_y:.2f}")  # 보정 전/후 yaw 각도를 로그에 출력
+    raw_body_y = ally_body_angle.get('y', 0.0)
+    corrected_body_y = correct_body_y_angle(raw_body_y)
+    write_log(f"ally_body_angle['y'] 원본(yaw): {raw_body_y:.2f} → 보정됨: {corrected_body_y:.2f}")
 
-    # ---------- 0-1. 차체 pitch 보정 (수직 각도용, 핵심 수정) ----------
-    raw_body_pitch = ally_body_angle.get('x', 0.0)  # 0~360 으로 들어온다고 가정  # ally_body_angle에서 'x'(pitch각)를 가져오고, 0~360 범위라고 가정
-    body_pitch = normalize_angle_deg_180(raw_body_pitch)  # -180~+180 으로 변환   # 위에서 정의한 함수로 pitch각을 -180~+180도로 정규화
-    write_log(f"ally_body_angle['x'] (차체 피치): 원본={raw_body_pitch:.2f}도 → 보정={body_pitch:.2f}도") # 보정 전/후 pitch각을 로그에 남김
+    # ---------- 0-1. 차체 pitch / roll 보정 (로그용) ----------
+    raw_body_pitch = ally_body_angle.get('x', 0.0)
+    raw_body_roll  = ally_body_angle.get('z', 0.0)
 
-    # 포탑 수직각: 로컬 기준(y), 월드 기준으로 변환
-    turret_pitch_local = ally_turret_angle.get('y', 0.0)  # R/F 로 움직이는 값   # 포탑의 로컬 수직각(포신이 위/아래로 움직이는 각도)을 가져옴
-    turret_pitch_world = normalize_angle_deg_180(body_pitch + turret_pitch_local) # 차체 피치 + 포탑 로컬 피치를 합쳐 "월드 기준" 포탑 수직각으로 변환
+    body_pitch = normalize_angle_deg_180(raw_body_pitch)
+    body_roll  = normalize_angle_deg_180(raw_body_roll)
+
     write_log(
-        f"포탑 수직각(월드 기준): {turret_pitch_world:.2f}도 "               # 월드 기준 포탑 수직각과
-        f"(차체 피치 {body_pitch:.2f} + 포탑 로컬 피치 {turret_pitch_local:.2f})" # 그 각도가 어떻게 구성되었는지(차체+포탑)를 로그에 출력
+        f"ally_body_angle 보정: pitch 원본={raw_body_pitch:.2f}도 → {body_pitch:.2f}도, "
+        f"roll 원본={raw_body_roll:.2f}도 → {body_roll:.2f}도"
+    )
+
+    # ---------- 0-2. 포탑 yaw (수평 방위각용) ----------
+    turret_yaw = ally_turret_angle.get('x', 0.0)
+
+    # ---------- 0-3. 포탑 피치: IBSM이 주는 값을 '월드 기준 포신 피치'로 가정 ----------
+    turret_pitch_world = normalize_angle_deg_180(ally_turret_angle.get('y', 0.0))
+    write_log(
+        f"포탑 수직각(월드 기준): {turret_pitch_world:.2f}도 "
+        f"(IBSM ally_turret_angle['y'] 기반)"
     )
 
     # 물리 상수
-    G = 9.81  # 중력가속도                                                # 중력 가속도 9.81m/s^2를 다시 한 번 지역 변수로 설정
-    muzzle_velocity = 61.0  # 포탄의 초기속도(61m/s)                        # 포의 포구초속을 61m/s로 설정
+    G = 9.81
+    muzzle_velocity = 61.0
 
     # ---------------- 1. 수평거리 및 고저차 계산 ----------------
-    dx = ibsm_target['x'] - ally_body_pos['x']                             # 아군과 적의 x좌표 차이
-    dz = ibsm_target['z'] - ally_body_pos['z']                             # 아군과 적의 z좌표 차이
-    horizontal_distance = math.sqrt(dx**2 + dz**2)                         # 피타고라스로 수평 거리 계산
+    dx = ibsm_target['x'] - ally_body_pos['x']
+    dz = ibsm_target['z'] - ally_body_pos['z']
+    horizontal_distance = math.sqrt(dx**2 + dz**2)
 
-    height_diff = ibsm_target['y'] - ally_body_pos['y'] + 0.2  # y축이 고도        # 적과 아군의 고도 차이(적 - 아군)를 계산
-    write_log(f"수평 거리: {horizontal_distance:.2f}m, 고저차(적 - 아군): {height_diff:.2f}m") # 수평 거리와 고저차를 로그에 기록
+    height_diff = ibsm_target['y'] - muzzle_pos['y']
+    write_log(f"수평 거리: {horizontal_distance:.2f}m, 고저차(적 - 포구): {height_diff:.2f}m")
 
-    # ---------------- 2. 발사 고각 계산 ----------------
-    elevation_angle = find_elevation_angle(horizontal_distance,            # 앞에서 만든 find_elevation_angle 함수를 사용해
-                                           height_diff,                    # 수평 거리, 고저차, 포구초속, 중력을 넣고
-                                           muzzle_velocity, G)             # 발사 고각을 계산
+    # ---------------- 2. 발사 고각 계산 (월드 기준) ----------------
+    elevation_angle = find_elevation_angle(horizontal_distance, height_diff, muzzle_velocity, G)
 
-    elevation_world = None                                                 # 월드 기준 발사 고각을 저장할 변수를 먼저 None으로 초기화
-    if elevation_angle is not None:                                        # 발사 고각을 찾았으면 (None이 아니면)
-        elevation_world = elevation_angle                                  # 그 값을 elevation_world에 그대로 넣어줌 (월드 기준과 같다고 봄)
-        write_log(f"적 전차를 맞추기 위한 발사 고각(월드 기준): {elevation_world:.2f}도") # 발사 고각을 로그에 출력
-    else:                                                                  # 발사 고각을 찾지 못했으면
-        write_log("적 전차를 맞출 수 있는 발사 고각을 찾지 못했습니다.")      # 맞출 수 없다는 내용을 로그에 남김
+    elevation_world = None
+    if elevation_angle is not None:
+        elevation_world = elevation_angle
+        enemy_in_range = True   # 탄도 해가 존재한다는 것은 이론상 사거리 안에 있다는 뜻.
+        write_log(f"적 전차를 맞추기 위한 발사 고각(월드 기준): {elevation_world:.2f}도")
+    else:
+        enemy_in_range = False  # 탄도 해가 없다는 것은 사거리 밖이라는 뜻.
+        write_log("적 전차를 맞출 수 있는 발사 고각(월드 기준)을 찾지 못했습니다.")
+        # 탄도 해 자체가 없으면, 여기서 바로 새 위치 추천
+        new_fire_point = find_new_fire_point(ally_body_pos, ibsm_target, corrected_body_y)
+        write_log(f"새로운 사격 위치 추천 (탄도 해 없음): {new_fire_point}")
+        return
 
-    # ---------------- 3. 포탑 수직 각도 제한 (피치 기반으로 수정) ----------------
-    # 차체 로컬 기준 포탑 수직 가동 범위: -5도(하강) ~ +10도(상승)
-    GUN_MIN_LOCAL = -10.0 # 차체 로컬 기준 최대 하강                       # 포신이 로컬 기준으로 얼마나 아래까지 내릴 수 있는지 (최소 각도)
-    GUN_MAX_LOCAL = +13.0 # 차체 로컬 기준 최대 상승                       # 포신이 로컬 기준으로 얼마나 위로 올릴 수 있는지 (최대 각도)
+    # ---------------- 3. 지형 충돌 검사 (월드 기준 발사각 사용) ----------------
+    clear_terrain = check_trajectory_collision(elevation_world, muzzle_pos, ibsm_target)
 
-    # 월드 기준에서의 허용 범위 = 차체 피치 + 로컬 가동 범위
-    turret_min_angle_world = body_pitch + GUN_MIN_LOCAL                    # 차체 피치를 고려한 월드 기준 최소 포탑 수직각
-    turret_max_angle_world = body_pitch + GUN_MAX_LOCAL                    # 차체 피치를 고려한 월드 기준 최대 포탑 수직각
+    if clear_terrain is False:
+        write_log("탄도 궤적이 지형에 막힙니다. 사격을 중지하고 새로운 사격 위치를 계산합니다.")
+        new_fire_point = find_new_fire_point(ally_body_pos, ibsm_target, corrected_body_y)
+        write_log(f"새로운 사격 위치 추천 (지형 차폐): {new_fire_point}")
+        return
 
-    # 혹시라도 min > max 되는 경우를 방지 (wrap 고려)
-    if turret_min_angle_world > turret_max_angle_world:                    # 이상하게 최소값이 최대값보다 커지는 상황이 생기면
-        turret_min_angle_world, turret_max_angle_world = (                 # 두 값을 서로 바꿔서
-            turret_max_angle_world, turret_min_angle_world)                # 항상 min <= max가 되도록 정리
+    # ---------------- 4. RF 제어 명령 생성 (완전 월드 기준) ----------------
+    rf_command, rf_weight = calculate_rf(
+        elevation_world,      # 목표: 월드 기준 발사 고각
+        turret_pitch_world    # 현재: 월드 기준 포신 피치
+    )
+    write_log(f"RF 명령: {rf_command}, RF 강도: {rf_weight:.2f}")
+
+    # ---------------- 5. 사격 명령 생성 (월드 기준 조준 오차로만 판단) ----------------
+    # 수평 방향(azimuth) 계산
+    azimuth_rad = math.atan2(dz, dx)
+    azimuth_deg_math = math.degrees(azimuth_rad)
+    azimuth_deg_12oclock = (90.0 - azimuth_deg_math) % 360.0
+
+    x_angle_diff = normalize_angle_deg(azimuth_deg_12oclock - turret_yaw)
+
+    # 수직 오차는 월드 기준
+    y_angle_diff = elevation_world - turret_pitch_world
 
     write_log(
-        f"포탑 수직 각도 제한(월드 기준): {turret_min_angle_world:.2f}도 ~ " # 월드 기준 포탑 수직 허용 각도 범위를
-        f"{turret_max_angle_world:.2f}도 (차체 피치 {body_pitch:.2f}도 기준, 로컬 -5~+10도)" # 차체 피치와 로컬 범위까지 설명 포함해서 로그로 남김
+        f"수평 각도 오차(월드 기준): {x_angle_diff:.2f}도, "
+        f"수직 각도 오차(월드 기준): {y_angle_diff:.2f}도"
     )
 
-    # ---------------- 4. 발사 가능 여부 판단 ----------------
-    if elevation_world is not None:                                        # 발사 고각을 구했을 때에만 탄도와 가동 범위를 검사
-        # 내가 쏴야 하는 발사각(elevation_world)은 월드 기준.
-        # 기구는 차체 기준이니, "포신 로컬 피치"로 환산해서 그 범위 안에 들어가는지 확인.
-        required_pitch_local = normalize_angle_deg_180(elevation_world - body_pitch) # 실제 기구(포신)가 필요로 하는 로컬 기준 피치각 = 발사각 - 차체 피치
+    YAW_TOLERANCE = 0.5
+    pitch_tolerance = compute_pitch_tolerance_deg(horizontal_distance)
 
+    # ======== [포신 피치 stuck 감지] ========
+    # 허용 오차 밖인데, 계속 그 상태로 오래 있으면 "기구 한계에 걸렸다"고 판단
+    if abs(y_angle_diff) > pitch_tolerance:
+        # 피치를 강하게 움직이려고 시도 중인지도 같이 본다 (rf_weight는 이번 프레임 계산값)
+        if rf_weight > 0.8:
+            if pitch_stuck_start_time is None:
+                pitch_stuck_start_time = time_val
+                write_log("피치 오차가 허용 범위를 벗어남 → stuck 타이머 시작")
+            else:
+                stuck_duration = time_val - pitch_stuck_start_time
+                if stuck_duration > 1.0:  # 1초 이상 계속 이 상태면 기구 한계로 간주
+                    write_log(
+                        f"피치 오차가 {stuck_duration:.2f}s 동안 줄지 않고 "
+                        f"허용오차({pitch_tolerance:.2f}도)를 초과 → "
+                        f"포신이 기구 한계에 도달한 것으로 판단, 새로운 사격 위치 계산"
+                    )
+                    new_fire_point = find_new_fire_point(ally_body_pos, ibsm_target, corrected_body_y)
+                    write_log(f"새로운 사격 위치 추천(피치 stuck): {new_fire_point}")
+                    # 이 프레임에서는 발사/조준 로직 중단
+                    fire_command = False
+                    rf_command = ""
+                    rf_weight = 0.0
+                    return
+        else:
+            # 충분히 세게 돌리려고 하지 않는다면 stuck 타이머 리셋
+            if pitch_stuck_start_time is not None:
+                write_log("피치 오차는 크지만, 강하게 움직이지 않고 있어 stuck 타이머 리셋")
+            pitch_stuck_start_time = None
+    else:
+        # 허용 오차 안으로 들어왔다면 stuck 아님
+        if pitch_stuck_start_time is not None:
+            write_log("피치 오차가 허용 범위 안으로 들어와 stuck 타이머 리셋")
+        pitch_stuck_start_time = None
+    # ======== [stuck 감지 끝] ========
+
+    if abs(x_angle_diff) < YAW_TOLERANCE and abs(y_angle_diff) < pitch_tolerance:
+        fire_command = True
+        fire_target = ibsm_target
+        write_log("사격 조건 충족! 발사 명령 전송")
+        # shooting_record(map_type, ally_body_pos, ibsm_target, elevation_world)
+    else:
+        fire_command = False
         write_log(
-            f"필요 포신 로컬 피치: {required_pitch_local:.2f}도 "          # 필요 로컬 피치가 얼마인지
-            f"(발사 고각 {elevation_world:.2f}도 - 차체 피치 {body_pitch:.2f}도)" # 발사각과 차체 피치의 차이로 설명하여 로그에 남김
+            f"조준 중... (수평: {abs(x_angle_diff):.2f}/{YAW_TOLERANCE}도, "
+            f"수직: {abs(y_angle_diff):.2f}/{pitch_tolerance}도)"
         )
-        write_log(
-            f"포탑 수직 가동 범위(로컬 기준): {GUN_MIN_LOCAL:.2f}도 ~ {GUN_MAX_LOCAL:.2f}도" # 로컬 기준 포탑 가동 한계도 로그로 남김
-        )
-
-        if GUN_MIN_LOCAL <= required_pitch_local <= GUN_MAX_LOCAL:         # 필요 로컬 피치가 포탑 가동 범위 안에 들어가면
-            write_log(
-                f"필요 로컬 피치({required_pitch_local:.2f}도)가 "           # 이 각도가 범위 안이라서
-                f"포탑 수직 가동 범위 내에 있음. 조준 및 사격을 시도합니다."      # 실제로 조준/사격 시도를 해보겠다고 로그에 남김
-            )
-
-            clear_terrain = check_trajectory_collision(elevation_world, ally_body_pos, ibsm_target) #지형 충돌 여부를 검사
-            
-            if clear_terrain == False:                                     # 결과가 False라면 (중간에 언덕에 막힌다면)
-                write_log("탄도 궤적이 지형에 막힙니다. 사격을 중지하고 새로운 사격 위치를 계산합니다.") # 사격 중지 및 새로운 위치 탐색 로그
-                new_fire_point = find_new_fire_point(                      # 위에서 만든 find_new_fire_point로
-                    ally_body_pos, ibsm_target, corrected_body_y)          # 현재 위치, 목표 위치, 보정된 yaw를 이용해 새 사격 위치를 찾음
-                write_log(f"새로운 사격 위치 추천: {new_fire_point}")      # 추천된 새 사격 위치를 로그에 출력
-                return                                                     # 여기서 함수 종료 (사격은 하지 않고 이동만 IBSM에 알려주게 됨)
-
-            # 5. RF 제어 명령 생성
-            rf_command, rf_weight = calculate_rf(                          # 사격 각도에 맞추기 위해 포탑 수직각을 조절하는 RF 명령과 강도를 계산
-                elevation_world, turret_pitch_world)
-            write_log(f"RF 명령: {rf_command}, RF 강도: {rf_weight:.2f}")  # 어떤 명령과 강도를 쓸지 로그에 출력
-
-            # 6. 사격 명령 생성 (수평/수직 각도가 모두 정렬되었을 때만 발사)
-            azimuth_rad = math.atan2(dz, dx)                               # 아군→적 방향의 방위각을 라디안 값으로 계산
-            azimuth_deg_math = math.degrees(azimuth_rad)                   # 그것을 도 단위의 "수학 좌표계" 기준 각도로 변환
-            azimuth_deg_12oclock = (90.0 - azimuth_deg_math) % 360.0      # "12시 방향 = 0도" 기준으로 쓰기 위해 각도를 변환
-
-            turret_yaw = ally_turret_angle.get('x', 0.0)                   # 포탑의 현재 수평각(좌우 회전각)을 ally_turret_angle['x']에서 가져옴
-            x_angle_diff = normalize_angle_deg(azimuth_deg_12oclock        # 목표 방위각과 현재 포탑 yaw의 차이를
-                                               - turret_yaw)               # 정규화해서 수평 각도 오차로 사용 (※ normalize_angle_deg는 다른 곳에서 정의되어 있다고 가정)
-
-            # 수직 오차는 월드 기준으로 보는 게 직관적
-            y_angle_diff = elevation_world - turret_pitch_world            # 수직 각도 오차 = 발사각(월드 기준) - 현재 포탑 수직각(월드 기준)
-
-            write_log(
-                f"수평 각도 오차: {x_angle_diff:.2f}도, "                  # 수평 오차와
-                f"수직 각도 오차(월드 기준): {y_angle_diff:.2f}도"         # 수직 오차를 둘 다 로그에 출력
-            )
-
-            YAW_TOLERANCE = 0.5                                            # 수평 각도 허용 오차를 0.5도로 설정
-            pitch_tolerance = compute_pitch_tolerance_deg(                 # 수평 거리에 따라 적절한 수직 각도 허용 오차를 계산
-                horizontal_distance)
-
-            if abs(x_angle_diff) < YAW_TOLERANCE :                         # 수평 오차가 허용 범위 안이고
-                if abs(y_angle_diff) < pitch_tolerance:                    # 수직 오차도 허용 범위 안이라면
-                    fire_command = True                                    # 사격 플래그를 True로 바꾸고
-                    fire_target = ibsm_target                              # 사격 목표를 현재 적 좌표로 설정
-                    write_log("사격 조건 충족! 발사 명령 전송")                # 사격 조건이 되었다는 로그 남김
-                    shooting_record(map_type, ally_body_pos, ibsm_target, elevation_angle)
-            else:                                                          # 수평 오차가 허용 범위를 벗어나면
-                fire_command = False                                       # 사격 명령은 False(발사하지 않음)
-                write_log(
-                    f"조준 중... (수평: {abs(x_angle_diff):.2f}/{YAW_TOLERANCE}도, "
-                    f"수직: {abs(y_angle_diff):.2f}/{pitch_tolerance}도)"  # 아직 조준 중이며, 현재 오차 상태를 로그로 출력
-                )
-
-        else:                                                              # 여기로 들어오면, 필요 로컬 피치가 포탑 가동 범위 밖이라는 뜻
-            # 여기로 들어오면 "포탑 로컬 피치 한계를 넘는 각도를 요구"한다는 의미
-            write_log(
-                f"필요 로컬 피치({required_pitch_local:.2f}도)가 "
-                f"포탑 수직 가동 범위({GUN_MIN_LOCAL:.2f}도 ~ {GUN_MAX_LOCAL:.2f}도)를 벗어납니다. "
-                f"사격이 가능한 새로운 위치를 계산합니다."
-            )                                                               # 포탑이 물리적으로 그 각도로 올라가지 못한다는 경고 로그
-            new_fire_point = find_new_fire_point(                          # 그래서 새로운 사격 위치를 찾기 위해 find_new_fire_point 호출
-                ally_body_pos, ibsm_target, corrected_body_y)
-            write_log(f"새로운 사격 위치 추천: {new_fire_point}")          # 추천 위치를 로그에 남김
-
-    else:                                                                  # elevation_world 가 None인 경우 (탄도 해가 아예 없는 경우)
-        write_log("탄도 해가 없어, 사격이 가능한 새로운 위치를 계산합니다.") # 이 속도/거리/고저차로는 맞출 수 없다는 로그
-        new_fire_point = find_new_fire_point(                              # 마찬가지로 새로운 사격 위치를 계산
-            ally_body_pos, ibsm_target, corrected_body_y)
-        write_log(f"새로운 사격 위치 추천: {new_fire_point}")              # 추천된 위치를 로그에 남김
-
 
 ##################### IBSM이 호출할 FCS의 엔드포인트 #######################
 @app.post("/get_fcs")
@@ -790,8 +790,11 @@ def get_fcs():
         "RF_weight" : rf_weight,            # 포신 상 / 하 세기, float형
         "fire_command" : fire_command,      # 사격 여부, bool형, True or False
         "fire_target" : fire_target,        # 사격 대상, dict형, {"x": 15.0, "y": 25.0, "z": 0.0}
-        "new_fire_point" : new_fire_point   # 현 위치 즉시 사격 불가 시 사격 가능 지점, dict형, {"x": 15.0, "y": 25.0, "z": 0.0}
+        "new_fire_point" : new_fire_point,  # 현 위치 즉시 사격 불가 시 사격 가능 지점, dict형, {"x": 15.0, "y": 25.0, "z": 0.0}
+        "enemy_in_range" : enemy_in_range   # 사정 범위 내인지 여부 (탄도 가능성, 탄도 해 존재)
     }
+    # debug: log flags explicitly for easier tracing
+    write_log(f"FCS flags: enemy_in_range={enemy_in_range}")
     write_log(f"FCS 반환 데이터: {response_data}")
 
     # 호출자(IBSM)에게 결과 반환

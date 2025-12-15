@@ -1271,7 +1271,6 @@ def init():
         "saveLidarData": False,
         "lux": 30000
     }
-
     write_log(f"🛠️ Initialization config sent via /init: {config}")
     return jsonify(config)
 

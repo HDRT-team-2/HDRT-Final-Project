@@ -85,7 +85,20 @@ def compute_trajectory(ally, target, angle_deg, muzzle_velocity=61.0):
 ############################
 # 4. 전체 지형 + 궤적 시각화
 ############################
-def visualize_shot(record_path, map_csv_dir, show=True, save_path=None, max_height=None):
+def visualize_shot(
+    record_path,
+    map_csv_dir,
+    show=True,
+    save_path=None,
+    max_height=None,
+    # ▼ 새로 추가된 옵션들
+    auto_rotate: bool = False,        # 자동 회전 ON/OFF
+    rotate_speed_deg: int = 2,        # 프레임당 회전 각도
+    rotate_revolutions: int = 1,      # 몇 바퀴 돌지
+    elev: float = 60.0,               # 카메라 고도
+    start_azim: float = -35.0,        # 시작 방위각
+    pause_sec: float = 0.03,          # 프레임 간 지연 (속도 = 1/pause_sec)
+):
 
     # 지형에서 살짝 띄워서 완전히 분리
     TRAJ_OFFSET  = 1.0   # 궤적용
@@ -96,8 +109,8 @@ def visualize_shot(record_path, map_csv_dir, show=True, save_path=None, max_heig
     max_z, max_x = altitude_grid.shape
 
     traj_x, traj_y, traj_z = compute_trajectory(
-        {"x":rec["ally_x"],"y":rec["ally_y"],"z":rec["ally_z"]},
-        {"x":rec["target_x"],"y":rec["target_y"],"z":rec["target_z"]},
+        {"x": rec["ally_x"],   "y": rec["ally_y"],   "z": rec["ally_z"]},
+        {"x": rec["target_x"], "y": rec["target_y"], "z": rec["target_z"]},
         rec["elevation_angle_deg"]
     )
 
@@ -111,29 +124,29 @@ def visualize_shot(record_path, map_csv_dir, show=True, save_path=None, max_heig
     Xg, Zg = np.meshgrid(X, Z)
     Yg = altitude_grid
 
-    fig = plt.figure(figsize=(12,10))
+    fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection="3d")
 
-    # 1) 지형: 더 투명하게 + zorder 낮게
+    # 1) 지형
     ax.plot_surface(
         Xg, Zg, Yg,
         cmap="terrain",
         linewidth=0,
         antialiased=True,
-        alpha=0.6,      # 0.85 → 0.6
+        alpha=0.6,
         zorder=1
     )
 
-    # 2) 궤적: 두껍게 + zorder 높게
+    # 2) 궤적
     ax.plot(
         traj_x, traj_z, vis_traj_y,
-        color="red",
+        color="blue",
         linewidth=3,
         label="Trajectory",
         zorder=10
     )
 
-    # 3) 아군/적: 더 크게, 테두리, depthshade 끄기 + zorder 더 높게
+    # 3) 아군 / 적
     ax.scatter(
         [rec["ally_x"]], [rec["ally_z"]], [vis_ally_y],
         marker="^", s=200, color="blue",
@@ -144,14 +157,14 @@ def visualize_shot(record_path, map_csv_dir, show=True, save_path=None, max_heig
     )
     ax.scatter(
         [rec["target_x"]], [rec["target_z"]], [vis_target_y],
-        marker="o", s=200, color="orange",
+        marker="^", s=200, color="red",
         edgecolor="k",
         depthshade=False,
         label="Enemy",
         zorder=12
     )
 
-    # 9) 제목/라벨
+    # 4) 제목/라벨
     title_ts = rec.get("timestamp", os.path.basename(record_path))
     ax.set_title(
         f"3D Ballistic Visualization | map={rec['map_type']} | {title_ts}",
@@ -161,11 +174,11 @@ def visualize_shot(record_path, map_csv_dir, show=True, save_path=None, max_heig
     ax.set_ylabel("Z (m)")
     ax.set_zlabel("Height (m)")
 
-    # 10) 전장 전체 범위
+    # 5) 전장 전체 범위
     ax.set_xlim(0, max_x)
     ax.set_ylim(0, max_z)
 
-    # 11) 높이 스케일 (자동 vs 수동)
+    # 6) 높이 스케일 (자동 vs 수동)
     if max_height is None:
         z_min = min(Yg.min(), vis_traj_y.min(), vis_ally_y, vis_target_y) - 2
         z_max = max(Yg.max(), vis_traj_y.max(), vis_ally_y, vis_target_y) + 2
@@ -174,16 +187,28 @@ def visualize_shot(record_path, map_csv_dir, show=True, save_path=None, max_heig
         z_max = max_height
     ax.set_zlim(z_min, z_max)
 
-    # 12) 카메라 시점 & 범례
-    ax.view_init(elev=60, azim=-35)
+    # 7) 초기 카메라 시점 & 범례
+    ax.view_init(elev=elev, azim=start_azim)
     ax.legend()
 
-    # 13) 저장/표시
+    # 8) 저장
     if save_path is not None:
         fig.savefig(save_path, dpi=160)
         print(f"[INFO] 이미지 저장: {save_path}")
 
     if show:
+        # 블로킹 없이 창 띄우기
+        plt.show(block=False)
+
+        # 🔁 자동 회전
+        if auto_rotate:
+            total_deg = 360 * rotate_revolutions
+            for azim in range(0, total_deg, rotate_speed_deg):
+                ax.view_init(elev=elev, azim=start_azim + azim)
+                plt.draw()
+                plt.pause(pause_sec)
+
+        # 사용자가 창을 닫을 때까지 유지
         plt.show()
     else:
         plt.close(fig)
@@ -193,10 +218,9 @@ def visualize_shot(record_path, map_csv_dir, show=True, save_path=None, max_heig
 # 5. 직접 실행 예시
 #######################################
 if __name__ == "__main__":
-    # 예시 경로들 – 필요에 맞게 수정해서 사용
-    record_file = "shooting_record_20251206_154823.txt"  # 실제 파일명으로 교체
+    record_file = "shooting_record_20251210_123816.txt"  # 실제 로그 이름
 
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))                  # 현재 파이썬 파일이 있는 폴더 경로를 BASE_DIR에 저장
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     altitude_map_csv_path = os.path.join(BASE_DIR, "map_csvs")
 
     visualize_shot(
@@ -204,5 +228,12 @@ if __name__ == "__main__":
         map_csv_dir=altitude_map_csv_path,
         show=True,
         max_height=110,
-        # save_path="shot_3d.png",  # 파일로 저장하고 싶으면 주석 해제
+
+        # 🔁 자동 회전 옵션
+        auto_rotate=True,        # 자동 회전 켜기
+        rotate_revolutions=2,    # 2바퀴 돌기
+        rotate_speed_deg=2,      # 1프레임당 2도씩
+        elev=60.0,               # 카메라 고도(위에서 내려다보는 느낌)
+        start_azim=-45.0,        # 시작 방위각
+        pause_sec=0.03,          # 프레임 간 딜레이 (줄이면 더 빠르게 회전)
     )

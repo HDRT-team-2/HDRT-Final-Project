@@ -186,18 +186,19 @@ def get_action():
 def init():
     config = {
         "startMode": "start",  # Options: "start" or "pause"
-        "blStartX": 50,  #Blue Start Position
+        "blStartX": 126.7714,  #Blue Start Position
         "blStartY": 15,
-        "blStartZ": 250,
-        "rdStartX": 150, #Red Start Position
-        "rdStartY": 10,
-        "rdStartZ": 250,
+        "blStartZ": 186.3636,
+        "rdStartX": 118.6766, #Red Start Position
+        "rdStartY": 11.5,
+        "rdStartZ": 118.9926,
         "trackingMode": True,
-        "detactMode": False,
+        "detectMode": False,
         "logMode": True,
         "enemyTracking": False,
         "saveSnapshot": False,
-        "saveLog": True,
+        "saveStereoCamera" : False,
+        "saveLog": False,
         "saveLidarData": False,
         "lux": 30000
     }
