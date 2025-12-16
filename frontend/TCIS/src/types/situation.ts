@@ -9,10 +9,12 @@ export type SituationEventType =
 export interface SituationEvent {
   id: string
   type: SituationEventType
-  time: Date
-  tracking_id?: number // 관련된 객체/발포 tracking_id
-  className?: string // 탐지된 객체 클래스 (detection일 때)
-  message: string // 표시할 메시지
+  className?: string // 탐지된 객체 클래스 (detection) 또는 발포 대상 클래스 (fire)
+  pos?: {
+    x: number
+    y: number
+  }
+  time?: Date // 프론트엔드에서 생성
 }
 
 // Situation Store 상태

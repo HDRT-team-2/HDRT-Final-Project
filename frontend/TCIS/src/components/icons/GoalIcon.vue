@@ -3,38 +3,75 @@ interface Props {
   x: number
   y: number
   size?: number
+  isDanger?: boolean // true면 빨강, false면 초록
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 10
+  size: 12,
+  isDanger: false
 })
 
-// 화살표 비율 (원본 SVG 기준: 13x17)
-const scale = props.size / 10
-const arrowWidth = 13 * scale
-const arrowHeight = 17 * scale
-const color = '#0A2369'
-
-// 중심점을 (0,0)으로 맞추기 위한 offset
-const centerOffsetX = -arrowWidth / 2
-const centerOffsetY = -arrowHeight / 2
+// 원본 SVG 기준: 12x12
+const radius = props.size / 2
+const innerRadius = radius * 0.4 // 2.4 / 6 비율
 </script>
 
 <template>
   <g>
-    <!-- 화살표 몸통 (세로 막대) -->
-    <rect
-      :x="props.x + centerOffsetX + 3 * scale"
-      :y="props.y + centerOffsetY"
-      :width="1 * scale"
-      :height="17 * scale"
-      :fill="color"
-    />
+    <!-- 빛나는 효과를 위한 외부 원 (애니메이션) -->
+    <circle
+      :cx="props.x"
+      :cy="props.y"
+      :r="radius * 1.5"
+      :fill="props.isDanger ? '#CC0000' : '#15803D'"
+      opacity="0.3"
+    >
+      <animate
+        attributeName="r"
+        :from="radius"
+        :to="radius * 2"
+        dur="1.5s"
+        repeatCount="indefinite"
+      />
+      <animate
+        attributeName="opacity"
+        from="0.6"
+        to="0"
+        dur="1.5s"
+        repeatCount="indefinite"
+      />
+    </circle>
     
-    <!-- 화살표 머리 (삼각형) -->
-    <path
-      :d="`M ${props.x + centerOffsetX + 13 * scale} ${props.y + centerOffsetY + 3.5 * scale} L ${props.x + centerOffsetX + 3.25 * scale} ${props.y + centerOffsetY + 6.53109 * scale} V ${props.y + centerOffsetY + 0.468911 * scale} L ${props.x + centerOffsetX + 13 * scale} ${props.y + centerOffsetY + 3.5 * scale} Z`"
-      :fill="color"
-    />
+    <!-- 내부 원 (채워진, 펄스 효과) -->
+    <circle
+      :cx="props.x"
+      :cy="props.y"
+      :r="innerRadius"
+      :fill="props.isDanger ? '#CC0000' : '#15803D'"
+    >
+      <animate
+        attributeName="opacity"
+        values="1;0.5;1"
+        dur="1s"
+        repeatCount="indefinite"
+      />
+    </circle>
+    
+    <!-- 외부 원 (테두리만) -->
+    <circle
+      :cx="props.x"
+      :cy="props.y"
+      :r="radius - 0.5"
+      :stroke="props.isDanger ? '#CC0000' : '#15803D'"
+      stroke-width="1.5"
+      fill="none"
+    >
+      <animate
+        attributeName="stroke-width"
+        values="1.5;2.5;1.5"
+        dur="1s"
+        repeatCount="indefinite"
+      />
+    </circle>
   </g>
 </template>

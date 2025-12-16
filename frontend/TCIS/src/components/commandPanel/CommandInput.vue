@@ -29,26 +29,12 @@ const handleKeyPress = (event: KeyboardEvent) => {
 </script>
 
 <template>
-  <div class="h-full bg-gray-800 p-2 flex flex-col">
-    <!-- 입력창 -->
-    <div class="flex-shrink-0 mb-2">
-      <div class="relative">
-        <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-400 text-xs font-mono">></span>
-        <input
-          v-model="commandInput"
-          @keypress="handleKeyPress"
-          type="text"
-          placeholder="명령어..."
-          class="w-full bg-gray-700 text-white text-xs font-mono pl-6 pr-2 py-1 rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-        />
-      </div>
-    </div>
-    
-    <!-- 상태 정보 (세로 공간 활용) -->
-    <div class="flex-1 text-xs text-gray-400 space-y-1">
-      <div>히스토리: {{ historyCount }}개</div>
-      <div class="text-gray-500">Enter로 실행</div>
-      <div class="text-gray-500">Shift+Enter로 줄바꿈</div>
-    </div>
-  </div>
+  <!-- 입력창 -->
+    <input
+      v-model="commandInput"
+      @keypress="handleKeyPress"
+      type="text"
+      placeholder="텍스트 입력.."
+      class="w-full text-xs p-2 rounded-lg border border-rotem-200"
+    />
 </template>

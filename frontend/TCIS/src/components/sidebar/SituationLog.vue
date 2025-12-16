@@ -3,7 +3,7 @@ import Card from '@/components/common/Card.vue';
 import SituationLogItem from '@/components/common/SituationLogItem.vue';
 import { ref, computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useSituationStore } from '@/stores/situation';
+import { useSituationStore } from '@/stores/situation-store';
 
 // Situation Store 연결
 const situationStore = useSituationStore();
@@ -13,7 +13,7 @@ const { events } = storeToRefs(situationStore);
 </script>
 
 <template>
-  <Card title="상황인지 결과">
+  <Card title="전장 인식 결과">
     <div class="h-full flex flex-col">
       <div class="flex-1 overflow-y-auto">
         <TransitionGroup

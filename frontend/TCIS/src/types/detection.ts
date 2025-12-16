@@ -6,17 +6,19 @@ export enum ObjectClassId {
   Car2 = 1,
   Car3 = 2,
   Car4 = 3,
-  Human1 = 4,
-  Tank1 = 5,
+  Human1 = 4, //명확하게 인식된 보병
+  Tank1 = 5, //명확하게 인식된 전차
   Rock1 = 6,
   Rock2 = 7,
   Mine1 = 8,
   Wall2 = 9,
   Wall2X10 = 10,
+  Tank2 = 11, //주변에 전차가 있는 경우
+  Human2 = 12 //주변에 보병이 있는 경우
 }
 
 //객체 클래스 이름
-export type ObjectClassName = 'tank' | 'car' | 'truck' | 'other' | 'human' | 'rock_small' | 'rock_large' | 'mine' | 'wall'
+export type ObjectClassName = 'tank' | 'tank_around' | 'car' | 'truck' | 'other' | 'human' | 'human_around' | 'rock_small' | 'rock_large' | 'mine' | 'wall'
 
 //클래스 ID → 이름 매핑
 export const CLASS_ID_TO_NAME: Record<number, ObjectClassName> = {
@@ -31,6 +33,8 @@ export const CLASS_ID_TO_NAME: Record<number, ObjectClassName> = {
   [ObjectClassId.Mine1]: 'mine',
   [ObjectClassId.Wall2]: 'wall',
   [ObjectClassId.Wall2X10]: 'wall',
+  [ObjectClassId.Tank2]: 'tank_around',
+  [ObjectClassId.Human2]: 'human_around'
 }
 
 //클래스 이름 한글
@@ -40,22 +44,23 @@ export const CLASS_NAME_KR: Record<ObjectClassName, string> = {
   tank: '전차',
   car: '차량',
   truck: '트럭',
-  other: '기타',
+  other: '장애물',
   rock_small: '작은 바위',
   rock_large: '큰 바위',
   mine: '지뢰',
-  wall: '벽'
+  wall: '벽',
+  tank_around: '전차',
+  human_around: '보병'
 }
 
-// 탐지된 객체
+// 프론트에서 사용할 형태
 export interface DetectedObject {
   tracking_id: number // 백엔드에서 추적 중인 고유 ID
   class_id: number // 백엔드에서 오는 클래스 ID
   class_name: ObjectClassName // 변환된 클래스 이름
   position: Coordinate // 위치
-  detectedAt: Date // 발견 시간
-  lastUpdated: Date // 마지막 업데이트 시간
-  distance?: number // 거리 (계산됨)
+  time: Date // 발견 시간
+  alive: boolean // 생존 여부
 }
 
 // 백엔드에서 오는 원본 데이터
@@ -64,7 +69,19 @@ export interface DetectionResponse {
     class_id: number
     x: number
     y: number
-    timestamp?: string
+    alive: boolean,
+}
+
+// 백엔드에서 오는 Detection 메시지 타입
+export interface DetectionMessage {
+  type: 'detection_update'
+  objects: DetectionResponse[] // 리스트 형식
+}
+
+// 이전 형식 호환용 (단일 객체)
+export interface DetectionMessageSingle {
+  type: 'detection_update'
+  object: DetectionResponse
 }
 
 // Detection Store 상태

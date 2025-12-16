@@ -4,6 +4,8 @@ interface Column {
   label: string;
   align?: 'left' | 'center' | 'right';
   width?: string;
+  sortable?: boolean;
+  sortOrder?: 'asc' | 'desc' | null;
 }
 
 interface Props {
@@ -24,6 +26,16 @@ const props = withDefaults(defineProps<Props>(), {
   maxHeight: undefined
 });
 
+const emit = defineEmits<{
+  sort: [columnKey: string]
+}>();
+
+const handleSort = (column: Column) => {
+  if (column.sortable) {
+    emit('sort', column.key);
+  }
+};
+
 const getSizeClass = () => {
   switch (props.size) {
     case 'sm': return 'text-xs';
@@ -43,19 +55,34 @@ const getAlignClass = (align?: string) => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto rounded-lg border border-gray-200" :style="maxHeight ? { maxHeight } : {}">
+  <div class="h-full overflow-auto" :style="maxHeight ? { maxHeight } : {}">
     <table class="w-full" :class="getSizeClass()">
       <!-- Header -->
-      <thead class="bg-gray-50 sticky top-0 z-10">
-        <tr>
+      <thead class="sticky top-0 z-10">
+        <tr class="bg-rotem-100 rounded-lg">
           <th
-            v-for="column in columns"
+            v-for="(column, idx) in columns"
             :key="column.key"
-            class="px-3 py-2 font-medium text-gray-900 border-b border-gray-200"
-            :class="getAlignClass(column.align)"
+            class="py-1 text-xs font-bold"
+            :class="[
+              getAlignClass(column.align),
+              {
+                'rounded-l-lg': idx === 0,
+                'rounded-r-lg': idx === columns.length - 1,
+                'cursor-pointer hover:bg-rotem-200 transition-colors select-none': column.sortable
+              }
+            ]"
             :style="column.width ? { width: column.width } : {}"
+            @click="handleSort(column)"
           >
-            {{ column.label }}
+            <div class="flex items-center justify-center gap-1">
+              <span>{{ column.label }}</span>
+              <span v-if="column.sortable" class="text-[10px]">
+                <span v-if="column.sortOrder === 'asc'">▲</span>
+                <span v-else-if="column.sortOrder === 'desc'">▼</span>
+                <span v-else class="text-gray-400">▼</span>
+              </span>
+            </div>
           </th>
         </tr>
       </thead>
@@ -66,16 +93,16 @@ const getAlignClass = (align?: string) => {
           v-for="(row, index) in data"
           :key="index"
           :class="{
-            'bg-gray-50': striped && index % 2 === 1,
-            'hover:bg-gray-100': hover,
-            'border-b border-gray-200': bordered && index < data.length - 1
+            'bg-rotem-100': striped && index % 2 === 1,
+            'hover:bg-rotem-100': hover,
+            'border-b border-rotem-100': bordered && index < data.length - 1
           }"
           class="transition-colors"
         >
           <td
             v-for="column in columns"
             :key="column.key"
-            class="px-3 py-2 text-gray-700"
+            class="py-1"
             :class="getAlignClass(column.align)"
           >
             <slot 

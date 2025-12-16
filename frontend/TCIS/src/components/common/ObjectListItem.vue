@@ -8,7 +8,7 @@ defineProps<Props>()
 </script>
 
 <template>
-  <div class="flex justify-between text-xs text-gray-600">
+  <div class="flex justify-between text-xs">
     <span>• {{ label }}</span>
     <span class="font-semibold">{{ count }}</span>
   </div>

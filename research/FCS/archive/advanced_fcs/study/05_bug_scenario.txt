@@ -1,0 +1,141 @@
+시나리오 1 : 
+적 전차는 내 사거리 안에 있지만, 사이에 큰 언덕이 있어서 사격해봤자 절대 못맞추는 상황.
+
+목표 : 고도맵을 바탕으로 포탄의 포물선을 미리 대조해서, 쏴봤자 언덕에 막히는걸 판단하게 하고 안쏘게 하기.
+
+config = {
+        "startMode": "start",  # Options: "start" or "pause"
+        "blStartX": 62.71,  #Blue Start Position
+        "blStartY": 9.7,
+        "blStartZ": 120.1,
+        "rdStartX": 17.21, #Red Start Position
+        "rdStartY": 9.2,
+        "rdStartZ": 167,
+        "trackingMode": True,
+        "detectMode": False,
+        "logMode": True,
+        "enemyTracking": False,
+        "saveSnapshot": False,
+        "saveStereoCamera" : False,
+        "saveLog": False,
+        "saveLidarData": False,
+        "lux": 30000
+    }
+
+
+시나리오 2 :
+적 전차는 내 전차보다 저지대, 적 전차는 내 사거리 안에 있고, 사격도 가능하지만, 내 차체와 적 차체가 둘 다 언덕 중간에 있어서 기울어져 있는 상황. 
+(포신을 내리면 맞추고도 남지만, 내리질 않음)
+
+목표 : 내 차체 기울기 및 포탑 기울기와 적 차체 기울기까지 포물선 계산에 확실히 반영해서 명중시키게 하기.
+
+config = {
+        "startMode": "start",  # Options: "start" or "pause"
+        "blStartX": 121.6039,  #Blue Start Position
+        "blStartY": 13.54,
+        "blStartZ": 201.1284,
+        "rdStartX": 131.7469, #Red Start Position
+        "rdStartY": 9.14,
+        "rdStartZ": 225.0801,
+        "trackingMode": True,
+        "detectMode": False,
+        "logMode": True,
+        "enemyTracking": False,
+        "saveSnapshot": False,
+        "saveStereoCamera" : False,
+        "saveLog": False,
+        "saveLidarData": False,
+        "lux": 30000
+    }
+
+
+config = {
+        "startMode": "start",  # Options: "start" or "pause"
+        "blStartX": 121.6039,  #Blue Start Position
+        "blStartY": 13.54,
+        "blStartZ": 201.1284,
+        "rdStartX": 133, #Red Start Position
+        "rdStartY": 8.5,
+        "rdStartZ": 267,
+        "trackingMode": True,
+        "detectMode": False,
+        "logMode": True,
+        "enemyTracking": False,
+        "saveSnapshot": False,
+        "saveStereoCamera" : False,
+        "saveLog": False,
+        "saveLidarData": False,
+        "lux": 30000
+    }
+
+
+현 최신버전 FCS의 가장 전형적인 오류 상황 두 건입니다. 이 두 건의 오류는 simple flat에선 식별이 불가능했던 버그들이고, 이 문제들이 해결되면 FCS는 완전히 Forest and river에서 문제 없이 사용가능합니다. 토요일 전까진 해결하는게 목적입니다.
+
+
+
+
+통상상황 1 : 같은 고도의 평지
+
+config = {
+        "startMode": "start",  # Options: "start" or "pause"
+        "blStartX": 56.5,  #Blue Start Position
+        "blStartY": 9.5,
+        "blStartZ": 90,
+        "rdStartX": 117.5, #Red Start Position
+        "rdStartY": 10,
+        "rdStartZ": 111,
+        "trackingMode": True,
+        "detectMode": False,
+        "logMode": True,
+        "enemyTracking": False,
+        "saveSnapshot": False,
+        "saveStereoCamera" : False,
+        "saveLog": False,
+        "saveLidarData": False,
+        "lux": 30000
+    }
+
+
+통상상황 2 : 적이 고지, 내가 저지
+
+config = {
+        "startMode": "start",  # Options: "start" or "pause"
+        "blStartX": 74.1379,  #Blue Start Position
+        "blStartY": 10,
+        "blStartZ": 85.9834,
+        "rdStartX": 94.7, #Red Start Position
+        "rdStartY": 16,
+        "rdStartZ": 156.0,
+        "trackingMode": True,
+        "detectMode": False,
+        "logMode": True,
+        "enemyTracking": False,
+        "saveSnapshot": False,
+        "saveStereoCamera" : False,
+        "saveLog": False,
+        "saveLidarData": False,
+        "lux": 30000
+    }
+
+
+녹화용 상황 : 내가 적보다 앞에 있고, 적은 나보다 뒤에 있는 상황에서, 적에게 포탑을 돌려서 사격
+
+config = {
+        "startMode": "start",  # Options: "start" or "pause"
+        "blStartX": 126.7714,  #Blue Start Position
+        "blStartY": 15,
+        "blStartZ": 186.3636,
+        "rdStartX": 118.6766, #Red Start Position
+        "rdStartY": 11.5,
+        "rdStartZ": 118.9926,
+        "trackingMode": True,
+        "detectMode": False,
+        "logMode": True,
+        "enemyTracking": False,
+        "saveSnapshot": False,
+        "saveStereoCamera" : False,
+        "saveLog": False,
+        "saveLidarData": False,
+        "lux": 30000
+    }
+

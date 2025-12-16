@@ -1,15 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useDetectionStore } from '@/stores/detection'
+import { useDetectionStore } from '@/stores/detection-store'
 import { SocketIOService } from '@/services/socketio_service'
-import type { DetectionResponse } from '@/types/detection'
-
-/**
- * Backend에서 오는 Detection 메시지 타입
- */
-interface DetectionMessage {
-  type: 'detection_update'
-  objects: DetectionResponse[]
-}
+import type { DetectionMessage } from '@/types/detection'
 
 /**
  * SocketIO로 탐지 객체 수신 (실시간)
@@ -37,22 +29,40 @@ export function useDetectionWebSocket() {
       // eventName
       'detection',
       // onMessage
-      (data: DetectionMessage) => {
+      (data: any) => {
         // 백엔드에서 보내는 메시지 형식:
-        // { type: 'detection_update', objects: [...] }
+        // { type: 'detection_update', 
+        //   objects: [  
+        //     {
+        //       "tracking_id": 0001, 
+        //       "class_id": 5, 
+        //       "x": 123.445, 
+        //       "z": 67.849,
+        //       "alive": true 
+        //     },
+        //     ...
+        //   ]
+        // }
         if (data.type === 'detection_update' && Array.isArray(data.objects)) {
           detectionStore.updateObjects(data.objects)
-          console.log(`탐지 수신: ${data.objects.length}개 객체`)
+          // console.log(`탐지 수신: ${data.objects.length}개 객체`)
+        }
+        // 단일 객체로 받는 경우 (하위 호환성)
+        else if (data.type === 'detection_update' && data.object) {
+          detectionStore.updateObject(data.object)
+          // console.log(`탐지 수신: [${data.object.tracking_id}] ${data.object.class_id}`)
+          // console.log(data.object)
         }
       },
-      // onError
-      (error) => {
-        console.error('Detection SocketIO 에러:', error)
-        isConnected.value = false
+      // onConnect
+      () => {
+        isConnected.value = true
+        console.log('Detection WebSocket 연결됨')
       },
       // onDisconnect
       () => {
         isConnected.value = false
+        console.log('Detection WebSocket 연결 끊김')
       }
     )
     

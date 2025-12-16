@@ -1,16 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { usePositionStore } from '@/stores/position'
+import { usePositionStore } from '@/stores/position-store'
 import { SocketIOService } from '@/services/socketio_service'
-import type { TankPosition } from '@/types/position'
-
-/**
- * Backend에서 오는 Position 메시지 타입
- */
-interface PositionMessage {
-  type: 'position_update'
-  x: number
-  y: number
-}
+import type { PositionMessage } from '@/types/position'
 
 /**
  * SocketIO로 현재 위치 수신 (실시간)
@@ -40,25 +31,23 @@ export function usePositionWebSocket() {
       // onMessage
       (data: PositionMessage) => {
         // 백엔드에서 보내는 메시지 형식:
-        // { type: 'position_update', x: 150, y: 200 }
-        if (data.type === 'position_update') {
-          const position: TankPosition = {
-            x: data.x,
-            y: data.y
-          }
-          
-          positionStore.updateCurrentPosition(position)
-          console.log('위치 수신:', position)
+        // { type: 'position_update', tanks: [{ tank_id: '17TK-101', x: 150, y: 200 }, ...] }
+        if (data.type === 'position_update' && Array.isArray(data.tanks)) {
+          data.tanks.forEach(tank => {
+            positionStore.updateTankPosition(tank)
+          })
+          // console.log(`위치 수신: ${data.tanks.length}개 탱크`)
         }
       },
-      // onError
-      (error) => {
-        console.error('Position SocketIO 에러:', error)
-        isConnected.value = false
+      // onConnect
+      () => {
+        isConnected.value = true
+        console.log('Position WebSocket 연결됨')
       },
       // onDisconnect
       () => {
         isConnected.value = false
+        console.log('Position WebSocket 연결 끊김')
       }
     )
     
