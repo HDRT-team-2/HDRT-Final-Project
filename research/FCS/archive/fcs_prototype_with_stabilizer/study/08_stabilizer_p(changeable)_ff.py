@@ -1,7 +1,8 @@
 """
+[통합 시스템] 스태빌라이저 (Lag 대응형) + FCS (탄도 계산 및 이동 예측)
 
-스테빌라이저 + FCS 코드의 기본 뼈대
-
+1. 스태빌라이저: 단순화된 P(비례) + FF(피드포워드) 제어를 사용하여 통신 지연(Lag)이 발생해도 포탑이 튀지 않도록 함.
+2. FCS: 지형 고도 데이터를 로딩하고, 탄도학을 계산하여 사격 가능 여부 판단 및 이동 좌표를 추천함.
 """
 ############################ 필요 라이브러리 선언 ###########################
 import os
@@ -15,13 +16,13 @@ import time
 app = Flask(__name__)
 
 ##################### IBSM에 보낼 데이터의 기본값 ##########################
-qe_command = ""
-qe_weight = 0
-rf_command = ""
-rf_weight = 0
-fire_command = False
-fire_target_pos = None
-new_fire_point_pos = None
+qe_command = ""         # 포탑 좌우 회전 명령 (Q/E)
+qe_weight = 0           # 포탑 회전 강도 (0.0 ~ 1.0)
+rf_command = ""         # 포신 상하 조절 명령 (R/F)
+rf_weight = 0           # 포신 조절 강도
+fire_command = False    # 발사 허가 여부
+fire_target_pos = None  # 조준하고 있는 적의 좌표
+new_fire_point = None   # 사격 불가능 시 이동해야 할 추천 좌표
 
 ######################## 스태빌라이져용 전역변수 ###########################
 # 물체(장애물/적) 조준용 타깃 좌표
@@ -29,242 +30,189 @@ aim_target_x = None
 aim_target_y = None
 aim_target_z = None
 
-# dt 및 "자이로(각속도)" 계산용 상태
-prev_time       = None
-prev_turret_x   = None   # 이전 프레임 포탑 yaw
-prev_turret_y   = None   # 이전 프레임 포탑 pitch
-
-# 웨이포인트 전환 완충용
-wp_switch_cooldown = 0
-
-# W 기반 기하학 미래예측용 상수
-PREDICT_NOMINAL_MAX_SPEED = 25.0   
-PREDICT_BASE_HORIZON      = 0.30   
-PREDICT_MAX_HORIZON       = 0.80   
-PREDICT_ALPHA_YAW         = 0.60   
-
 ########################### FCS용 전역변수 ###############################
-altitude_df = None              # csv 파일을 데이터프레임화 시킨 것을 저장할 전역 변수
-altitude_grid = None            # altitude_df를 numpy 2d grid화 시킨 것을 저장할 전역변수
-altitude_grid_shape = None      # (y크기, x크기) 형태로 그리드 크기 저장할 전역변수
+# 맵 데이터(CSV)를 메모리에 로드하여 저장하는 변수들 (매번 파일 읽는 것 방지)
+altitude_df = None              # Pandas DataFrame 형태의 고도 데이터
+altitude_grid = None            # Numpy 2D 배열 형태의 고도 그리드 (검색 속도 최적화)
+altitude_grid_shape = None      # 그리드 크기 (Max Y, Max X)
+
+
+# [최적화] 이전 프레임의 적 위치와 계산 결과를 기억하기 위한 캐시 변수
+# 매 프레임마다 미세하게 변하는 적 위치 때문에 탱크가 덜덜거리는 현상을 막기 위함 (Hysteresis)
+prev_enemy_x = None         # 직전에 계산했던 적 X
+prev_enemy_y = None         # 직전에 계산했던 적 Y 
+prev_enemy_z = None         # 직전에 계산했던 적 Z
+cached_move_x = None        # 캐싱된 이동 목표 X
+cached_move_y = None        # 캐싱된 이동 목표 Y 
+cached_move_z = None        # 캐싱된 이동 목표 Z
 
 ########################### 스태빌라이저 기능 #############################
 def normalize_angle_deg(angle: float) -> float:
-    """각도를 -180 ~ 180도로 정규화"""
+    """
+    각도를 -180도 ~ +180도 사이로 변환합니다.
+    예: 270도 -> -90도, 370도 -> 10도
+    """
     return (angle + 180.0) % 360.0 - 180.0
 
-class TurretYawStabilizer:
+class SimpleTurretStabilizer:
     """
-    [수정됨] P + Gyro Damping + Feed-Forward 제어기
-    - I(적분) 제거: 반응성 향상, 오버슈트 제거
-    - Gyro Damping: 외부 충격(지형)에 대한 즉각적인 저항
+    [Simpler is Better] 가변 P + FF 제어기 (Lag 대응형)
+    
+    기존 PID 제어에서 D(미분)항은 통신 지연(dt 불안정) 시 값이 폭주하여 포탑을 떨게 만듭니다.
+    따라서 D항을 제거하고, 대신 '목표와의 거리'에 따라 P게인(힘)을 조절하는 방식을 사용합니다.
+    
+    1. 가변 P 제어:
+       - 목표가 멀리 있음 (> 5도): 강한 힘(Kp_fast)으로 빠르게 회전
+       - 목표가 가까이 있음 (< 5도): 약한 힘(Kp_slow)으로 천천히 회전 (브레이크 효과)
+    
+    2. FF (Feed Forward) 제어:
+       - 차체가 회전(A/D키)할 때, 그 반대 방향으로 즉시 포탑을 돌려 조준을 유지함 (반응성 극대화)
     """
     def __init__(self):
-        # dt & gyro 계산용 상태
-        self.prev_time     = None
-        self.prev_turret_x = None
-        self.prev_turret_y = None
+        # ========= [Yaw: 좌우 제어 변수] =================
+        # 1. 원거리 P게인: 목표와 1도 이상 차이날 때 적용. 빠르게 추적.
+        self.Kp_fast = 0.04  
+        
+        # 2. 근거리 P게인: 목표와 1도 이내일 때 적용. 
+        #    천천히 움직여서 오버슈트(목표를 지나침)를 방지하는 '브레이크' 역할.
+        self.Kp_slow = 0.02  
 
-        # [삭제됨] 적분(I) 관련 변수들 (yaw_int, limits 등) 제거
+        # 3. FF게인 (AD 역보상 계수): 
+        #    1.0이면 차체 회전 속도만큼 정확히 반대로 돌리려 시도함.
+        self.Kff_ad  = 1.0   
 
-        # 파라미터 (튜닝포인트)
-        self.Kp_yaw       = 0.045   # P게인: 목표를 쫓아가는 힘
-        self.Kd_yaw_gyro  = 0.015   # D게인: 흔들림을 잡아주는 힘 (자이로 감쇠)
+        # 4. 정밀 조준 구간 (단위: 도)
+        #    이 각도 안으로 들어오면 Kp_slow를 사용하여 감속함.
+        self.SLOW_ZONE = 1.0 
 
-        self.YAW_DEADBAND   = 0.5
-        self.GYRO_DEADBAND  = 1.0
-        self.AD_DEADBAND    = 0.05
-        self.MAX_QE         = 1.0
-        self.MIN_QE_OUTPUT  = 0.02
+        self.YAW_DEADBAND   = 0.5   # 오차가 0.5도 이내면 아예 움직이지 않음 (떨림 방지)
+        
+        # ======== [Pitch: 상하 제어 변수 추가] ===========
+        self.Kp_pitch = 0.1   # 상하 움직임은 중력을 이겨야 하므로 P게인을 좀 더 높게
 
-        # [추가] 미래 예측 튀는 것 방지용 상수
-        self.MAX_GEOM_DELTA = 12.0
+        self.Kff_pitch = 0.0  # (선택) 급정거 시 차체가 앞으로 쏠리는 것을 보상하려면 사용
+        
+        self.PITCH_DEADBAND = 0.2
 
-    # ------------------------------------------------------------------
-    # 시간 / 자이로 계산
-    # ------------------------------------------------------------------
-    def _compute_dt_and_gyro(self, time_val, turret_x, turret_y):
-        # 기본 dt (fallback)
-        dt = 0.016
+        # ===================================================
+        self.MAX_QE         = 2.0   # 모터 최대 출력 제한
+        self.MIN_QE_OUTPUT  = 0.01  # 모터 최소 출력 (이것보다 작으면 무시)
 
-        # dt 계산
-        if self.prev_time is None:
-            self.prev_time = time_val
-        else:
-            dt_raw = time_val - self.prev_time
-            if dt_raw > 0:
-                dt = dt_raw
-            self.prev_time = time_val
-
-        # 각속도 계산
-        if self.prev_turret_x is None or self.prev_turret_y is None:
-            gyro_yaw_rate = 0.0
-        else:
-            dyaw = normalize_angle_deg(turret_x - self.prev_turret_x)
-            if dt > 0.0:
-                gyro_yaw_rate = dyaw / dt
-            else:
-                gyro_yaw_rate = 0.0
-
-        self.prev_turret_x = turret_x
-        self.prev_turret_y = turret_y
-
-        return dt, gyro_yaw_rate
-
-    # ------------------------------------------------------------------
-    # 메인 Yaw 제어 (QE_command / QE_weight 계산)
-    # ------------------------------------------------------------------
     def update(
         self,
         *,
-        time_val: float,
-        player_x: float,
-        player_y: float,
-        player_z: float,
-        player_turret_x: float,     # 포탑 yaw
-        target_x: float,
-        target_y: float,
-        target_z: float,
-        body_yaw: float,            # 차체 yaw
-        body_AD_cmd: str,
-        body_AD_weight: float,
+        # 시간 관련 변수는 이제 필요 없지만 인터페이스 유지를 위해 받음
+        time_val: float, 
+        player_x: float, player_y: float, player_z: float,
+        player_turret_x: float,     # 현재 포탑의 절대 Yaw 각도
+        target_x: float, target_y: float, target_z: float,
+        body_yaw: float,            # 차체의 절대 Yaw 각도
+        body_AD_cmd: str,           # 키보드 A/D 입력 상태
+        body_AD_weight: float,      # 키보드 입력 강도
         player_speed: float,
-        body_WS_weight: float = 0.0 # [추가] 전진 가중치
+        body_WS_weight: float = 0.0
+        
     ):
-        # dt / 자이로 계산
-        dt, gyro_yaw_rate = self._compute_dt_and_gyro(time_val, player_turret_x, 0.0)
-
-        # 1) 타겟까지의 yaw 오차 계산
+        # 1. 목표 지점을 향한 절대 방위각(Target Yaw) 계산
         dx = target_x - player_x
         dz = target_z - player_z
-        
-        # atan2(dx, dz): IBSM 좌표계 기준
         target_yaw = math.degrees(math.atan2(dx, dz))
         if target_yaw < 0:
             target_yaw += 360.0
 
+        # 2. 현재 오차 계산 (목표 각도 - 내 포탑 각도)
+        #    normalize를 통해 -180 ~ 180 사이의 최단 경로 오차를 구함
         yaw_err_now = normalize_angle_deg(target_yaw - player_turret_x)
-        
-        # ---------------------------------------------------------
-        # [복구됨] 기하학적 미래 예측 (W Prediction)
-        # ---------------------------------------------------------
-        yaw_err_target = yaw_err_now
-        
-        # 전진 중일 때만 예측 수행
-        eff_weight = body_WS_weight if body_WS_weight > 0 else (player_speed / PREDICT_NOMINAL_MAX_SPEED)
-        
-        if eff_weight > 0.01 and player_speed > 0.1:
-            horizon = PREDICT_BASE_HORIZON + (PREDICT_MAX_HORIZON - PREDICT_BASE_HORIZON) * eff_weight
-            horizon = max(0.10, min(horizon, PREDICT_MAX_HORIZON))
 
-            forward_dist = player_speed * horizon
-            heading_rad = math.radians(body_yaw)
-            
-            # 미래 위치
-            future_x = player_x + forward_dist * math.sin(heading_rad)
-            future_z = player_z + forward_dist * math.cos(heading_rad)
-
-            # 미래 타겟 각도
-            dx_f = target_x - future_x
-            dz_f = target_z - future_z
-            target_yaw_f = math.degrees(math.atan2(dx_f, dz_f))
-            if target_yaw_f < 0: target_yaw_f += 360.0
-
-            err_f_raw = normalize_angle_deg(target_yaw_f - player_turret_x)
-            
-            # 튀는 값 방지 (Outlier Filter)
-            delta_f = normalize_angle_deg(err_f_raw - yaw_err_now)
-            if abs(delta_f) > self.MAX_GEOM_DELTA:
-                # 너무 튀면 현재값 기준 제한된 만큼만 이동
-                yaw_err_target = yaw_err_now + self.MAX_GEOM_DELTA * math.copysign(1.0, delta_f)
-            else:
-                # 예측값과 현재값을 블렌딩 (Alpha 0.6)
-                yaw_err_target = (1.0 - PREDICT_ALPHA_YAW) * yaw_err_now + PREDICT_ALPHA_YAW * err_f_raw
-
-        # 2) Deadband Check
-        if abs(yaw_err_target) < self.YAW_DEADBAND and abs(gyro_yaw_rate) < self.GYRO_DEADBAND:
+        # 3. 데드밴드 체크
+        #    오차가 매우 작고(0.5도 미만), 플레이어가 차체를 회전시키지 않고 있다면
+        #    불필요한 미세 조정을 막기 위해 정지(0.0) 반환
+        if abs(yaw_err_now) < self.YAW_DEADBAND and body_AD_weight < 0.1:
             return "", 0.0
 
-        # 3) Feed-Forward (AD 보상)
-        u_ff = 0.0
-        K_FF_AD = 0.4
-        if body_AD_cmd == "D":
-            u_ff = -K_FF_AD * float(body_AD_weight)
-        elif body_AD_cmd == "A":
-            u_ff = +K_FF_AD * float(body_AD_weight)
-
-        # 4) P-Gyro Control Calculation (I 제거됨)
-        # P 제어: 목표 지향
-        P = self.Kp_yaw * yaw_err_target
+        # ================= [핵심 제어 로직] =================
         
-        # D 제어: 자이로(속도) 감쇠 (Active Damping)
-        # 오차의 미분이 아니라, 현재 회전 속도를 반대로 억제함
-        D = -self.Kd_yaw_gyro * gyro_yaw_rate 
+        # (A) 가변 P 제어: 오차 크기에 따라 회전 힘 결정
+        current_kp = 0.0
+        if abs(yaw_err_now) > self.SLOW_ZONE:
+            # 목표가 멀리 있다 -> Kp_fast로 빠르게 회전
+            current_kp = self.Kp_fast
+        else:
+            # 목표에 거의 다 왔다 -> Kp_slow로 감속하여 부드럽게 안착
+            current_kp = self.Kp_slow
+            
+        P = current_kp * yaw_err_now
+        
+        # (B) FF 제어 (Feed Forward): 차체 회전 보상
+        #     차체가 왼쪽(A)으로 돌면 포탑은 오른쪽(E)으로 돌아야 같은 곳을 볼 수 있음
+        FF = 0.0
+        if body_AD_cmd == "A":   # 차체 좌회전
+            FF = self.Kff_ad * body_AD_weight  # 포탑 우회전 힘 추가 (+)
+        elif body_AD_cmd == "D": # 차체 우회전
+            FF = -self.Kff_ad * body_AD_weight # 포탑 좌회전 힘 추가 (-)
 
-        # 최종 합산
-        u = P + D + u_ff
+        # (C) 최종 출력 합산
+        u = P + FF
+        # ==========================================================
 
-        # 5) 출력 클램프
-        if u > self.MAX_QE:
-            u = self.MAX_QE
-        elif u < -self.MAX_QE:
-            u = -self.MAX_QE
+        # 4. 하드웨어/게임 엔진 한계에 맞게 출력 제한 (Clamping)
+        if u > self.MAX_QE: u = self.MAX_QE
+        elif u < -self.MAX_QE: u = -self.MAX_QE
 
-        # 최소 출력 확인
+        # 5. 너무 작은 출력은 무시 (모터 보호 및 떨림 방지)
         if abs(u) < self.MIN_QE_OUTPUT:
             return "", 0.0
 
-        # 6) Q / E 결정 (방향이 반대라면 여기서 Q, E를 서로 바꾸세요)
+        # 6. 최종 명령 생성 (양수면 E, 음수면 Q)
         if u > 0:
             return "E", u
         else:
             return "Q", -u
 
-# 전역 스태빌라이저 인스턴스
-yaw_stabilizer = TurretYawStabilizer()
+# 전역 스태빌라이저 인스턴스 생성
+yaw_stabilizer = SimpleTurretStabilizer()
 
 def turret_control(request_data: dict):
     """
-    IBSM → FCS 래퍼 함수
+    IBSM에서 들어온 데이터를 파싱하여 스태빌라이저(yaw_stabilizer)를 실행시키는 래퍼 함수
     """
     global qe_command, qe_weight, aim_target_x, aim_target_y, aim_target_z
-
-    # 1) 데이터 파싱
+    
+    # 1) JSON 데이터 파싱 (안전하게 기본값 처리)
     time_val = float(request_data.get("time", 0.0))
 
     ally_pos   = request_data.get("ally_body_pos", {}) or {}
     ally_ang   = request_data.get("ally_body_angle", {}) or {}
     turret_ang = request_data.get("ally_turret_angle", {}) or {}
-    target_pos = request_data.get("ibsm_target_pos", {}) or {}
+    target_pos = request_data.get("ibsm_target", {}) or {}
 
     player_x = float(ally_pos.get("x", 0.0))
     player_y = float(ally_pos.get("y", 0.0))
     player_z = float(ally_pos.get("z", 0.0))
 
-    player_turret_x = float(turret_ang.get("x", 0.0))   # yaw
-    
-    body_yaw = float(ally_ang.get("y", 0.0))            # 차체 yaw
-
+    player_turret_x = float(turret_ang.get("x", 0.0))   # 포탑 Yaw
+    body_yaw = float(ally_ang.get("y", 0.0))            # 차체 Yaw
     player_speed = float(request_data.get("ally_speed", 0.0))
 
-    # AD/WS 명령 – IBSM에서 내려준 값 사용
+    # 차체 제어 명령 파싱 (FF 제어에 사용)
     body_AD_cmd    = request_data.get("AD_command", "")
     body_AD_weight = float(request_data.get("AD_weight", 0.0))
-    body_WS_weight = float(request_data.get("WS_weight", 0.0)) # WS 추가
+    body_WS_weight = float(request_data.get("WS_weight", 0.0))
 
-    # 2) 타깃 선택
+    # 2) 타깃 설정 (IBSM에서 온 타깃이 없으면 이전 타깃 유지)
     if "x" in target_pos and "y" in target_pos and "z" in target_pos:
         target_x = float(target_pos.get("x", 0.0))
         target_y = float(target_pos.get("y", 0.0))
         target_z = float(target_pos.get("z", 0.0))
         aim_target_x, aim_target_y, aim_target_z = target_x, target_y, target_z
-
+        
     elif aim_target_x is not None:
         target_x, target_y, target_z = aim_target_x, aim_target_y, aim_target_z
     else:
+        # 타깃이 아예 없으면 아무것도 안 함
         return qe_command, qe_weight
 
-    # 3) 스태빌라이저 업데이트
+    # 3) 스태빌라이저 업데이트 실행
     QE_cmd, QE_w = yaw_stabilizer.update(
         time_val=time_val,
         player_x=player_x,
@@ -278,9 +226,10 @@ def turret_control(request_data: dict):
         body_AD_cmd=body_AD_cmd,
         body_AD_weight=body_AD_weight,
         player_speed=player_speed,
-        body_WS_weight=body_WS_weight # 파라미터 전달
+        body_WS_weight=body_WS_weight
     )
 
+    # 전역 변수에 결과 저장 (나중에 반환됨)
     qe_command = QE_cmd
     qe_weight  = QE_w
 
@@ -288,14 +237,20 @@ def turret_control(request_data: dict):
 # FCS 기능에 사용할 함수들
 # 맵 종류에 맞는 Altatude Map csv 파일을 읽어와서 판다스 데이터프레임에 저장, 그리고 넘파이 2D그리드화(최초 1회)
 def check_maptype(maptype: int):
+    """
+    맵 종류에 따라 해당하는 지형 고도(CSV) 파일을 로드하여 메모리(Numpy Grid)에 캐싱.
+    이미 로드된 맵이라면 다시 읽지 않아 성능을 최적화함.
+    """
     global altitude_df, altitude_grid, altitude_grid_shape
 
+    # 이미 같은 맵이 로드되어 있다면 패스
     if getattr(check_maptype, "_loaded_mt", None) == maptype and altitude_df is not None:
         return  # 이전과 같은 맵이라면, 맵 정보 재로딩을 하지 않음.
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     altitude_map_csv_path = os.path.join(BASE_DIR, "map_csvs")
 
+    # 맵 ID별 파일명 매핑
     csv_file_names = {
         0: "00_forest_and_river_300x300.csv",
         1: "01_country_road_300x300.csv",
@@ -385,11 +340,12 @@ def angle_to_weight(angle_diff_deg, max_angle=30.0, min_weight=0.0, max_weight=1
 def normalize_angle_deg_for_fcs(angle: float) -> float:
     return (angle + 180.0) % 360.0 - 180.0
 
-
 # FCS 기능 메인
 def fcs_function(request_data : dict):
-    global rf_command, rf_weight, fire_command, fire_target_pos, new_fire_point_pos
-    
+    global rf_command, rf_weight, fire_command, fire_target_pos, new_fire_point
+    global prev_enemy_x, prev_enemy_y, prev_enemy_z
+    global cached_move_x, cached_move_y, cached_move_z
+
     # IBSM으로부터 받아온 request_data들을 사용하기 위해 변수로 저장.
     data =  request_data    
 
@@ -397,20 +353,23 @@ def fcs_function(request_data : dict):
     rf_command = ""
     rf_weight  = 0.0
     fire_command = False
-    new_fire_point_pos = None
+    new_fire_point = None
     fire_target_pos = None
+    
+    # IBSM으로 부터 읽어온 값들을 계산에 쓰기 위한 변수로 저장(payload 누락에 대한 예외처리, 0 추가.)
+    data =  request_data
 
     # IBSM으로부터 받은 타겟의 존재 여부 확인 : 적을 상대하는게 아닌, 스태빌라이저만 필요할 때, FCS는 실행시키지 않게 하기
-    ibsm_target = data.get("ibsm_target_pos")
+    ibsm_target = data.get("ibsm_target")
     if (not isinstance(ibsm_target, dict) or "x" not in ibsm_target or "y" not in ibsm_target or "z" not in ibsm_target):
         return   # 더 이상 계산하지 않고 바로 종료, 추가로 위에서 매 프레임 초기화를 하기 때문에 fire_target_pos도 None으로 반환
 
     # IBSM으로 부터 읽어온 값들을 계산에 쓰기 위한 변수로 저장(payload 누락에 대한 예외처리, 0 추가.)
     maptype = int(data.get("map_type", 0))      # 맵 타입
     check_maptype(maptype)
-    enemy_pos_x = float(data.get("ibsm_target_pos", {}).get("x", 0))    # 적 x좌표 (시뮬레이터 기준)
-    enemy_pos_y = float(data.get("ibsm_target_pos", {}).get("y", 0))    # 적 y좌표 (시뮬레이터 기준, 고도)
-    enemy_pos_z = float(data.get("ibsm_target_pos", {}).get("z", 0))    # 적 z좌표 (시뮬레이터 기준)
+    enemy_pos_x = float(data.get("ibsm_target", {}).get("x", 0))    # 적 x좌표 (시뮬레이터 기준)
+    enemy_pos_y = float(data.get("ibsm_target", {}).get("y", 0))    # 적 y좌표 (시뮬레이터 기준, 고도)
+    enemy_pos_z = float(data.get("ibsm_target", {}).get("z", 0))    # 적 z좌표 (시뮬레이터 기준)
     my_pos_x = float(data.get("ally_body_pos", {}).get("x", 0))     # 내 x좌표 (시뮬레이터 기준)
     my_pos_y = float(data.get("ally_body_pos", {}).get("y", 0))     # 내 y좌표 (시뮬레이터 기준, 고도)
     my_pos_z = float(data.get("ally_body_pos", {}).get("z", 0))     # 내 z좌표 (시뮬레이터 기준)
@@ -426,7 +385,7 @@ def fcs_function(request_data : dict):
     G = 9.81 # 중력가속도
     muzzle_velocity = 61 # 포탄의 초기속도(61m/s)
     fire_target_pos = {"x": enemy_pos_x, "y": enemy_alt, "z": enemy_pos_z}  #사격해야 할 적의 좌표
-    
+
     print(data)  # IBSM에서 수신받은 값들 출력
 
     print(f'내 높이 : {my_alt}')
@@ -455,7 +414,7 @@ def fcs_function(request_data : dict):
         else:
             rf_command = ""
             rf_weight = 0.0
-        
+
         if rf_command != "":
             delta_pitch = elevation_angle - my_turret_y
             rf_weight = angle_to_weight(delta_pitch, max_angle=20.0, dead_zone=0.5)
@@ -486,7 +445,7 @@ def fcs_function(request_data : dict):
             f"포탑 수직 제한: [{turret_min_angle:.2f}, {turret_max_angle:.2f}] "
             f"→ 필요고각 {elevation_angle:.2f} → in_elev_limit={in_elev_limit}"
         )
-    
+
     # 계산 6. 사거리 계산 (발사각 10도 기준)
     theta_deg = 10.0
     theta_rad = math.radians(theta_deg)
@@ -508,41 +467,86 @@ def fcs_function(request_data : dict):
 
     can_fire_now = has_solution and elev_ok and yaw_aligned and pitch_aligned
 
+    """
+    수정사항 : previous 좌표를 저장해서 오차값 5%이내에 일치하면 그 좌표로 이동하게
+
+    """
+
     # 이동해야 할 위치 계산 후, x,y 좌표를 반환하는 계산기 매서드 (적 전차 방향으로 사정거리만큼 접근)
     def get_move_position(my_x, my_z, enemy_x, enemy_z, move_distance):
         dx = enemy_x - my_x
         dz = enemy_z - my_z
         total_distance = math.hypot(dx, dz)
-        if total_distance == 0.0:                   # 내가 적 좌표와 같은 x,z에 있을 경우, 0으로 나누는것 방지용
+        if total_distance == 0.0:                   # 내s가 적 좌표와 같은 x,z에 있을 경우, 0으로 나누는것 방지용
             return my_x, my_z                       # 그냥 원래 x, z좌표 반환
         ratio = (total_distance - move_distance) / total_distance   # 전체 거리 중 필요한 거리 만큼만 적 방향으로 이동
         new_x = my_x + dx * ratio
         new_z = my_z + dz * ratio
         return new_x, new_z                         # 새로 가야할 x좌표, z좌표를 반환
-    
+
     need_move_for_range = (horizontal_distance > range_10deg)
     need_move_for_elev = not elev_ok  # 고각 제한 밖이면 위치를 바꿀 필요가 있다고 가정
 
+    # 수정사항 : 현재 사격이동좌표가 계속 변동이 일어나 이것을 저장하고 범위내(5%)에 일정하면 저장된 좌표로 이동하는걸로 계산
     if not can_fire_now and (need_move_for_range or need_move_for_elev):
         fire_command = False
-        # 적 방향으로 range_10deg 만큼 떨어진 지점으로 접근 제안
-        move_x, move_z = get_move_position(my_pos_x, my_pos_z, enemy_pos_x, enemy_pos_z, range_10deg)
-        h = altitude_calculator(move_x, move_z)
-        new_fire_point_pos = {
+        
+        use_cached_data = False 
+
+        # 1. 이전에 저장된 적 좌표(X, Y, Z)가 모두 있는지 확인
+        if (prev_enemy_x is not None and 
+            prev_enemy_y is not None and 
+            prev_enemy_z is not None):
+            
+            # 2. 오차 범위(5%) 계산 (Y 포함)
+            margin_x = max(abs(prev_enemy_x * 0.05), 0.1)
+            margin_y = max(abs(prev_enemy_y * 0.05), 0.1)
+            margin_z = max(abs(prev_enemy_z * 0.05), 0.1)
+
+            # 3. 현재 적 위치와 이전 적 위치 차이 계산
+            diff_x = abs(enemy_pos_x - prev_enemy_x)
+            diff_y = abs(enemy_pos_y - prev_enemy_y)
+            diff_z = abs(enemy_pos_z - prev_enemy_z)
+
+            # 4. X, Y, Z 모두 오차 범위 이내여야 함
+            if (diff_x <= margin_x and 
+                diff_y <= margin_y and 
+                diff_z <= margin_z):
+                use_cached_data = True
+
+        # 분기 처리
+        if use_cached_data:
+            # 저장해뒀던 X, Y(h), Z 모두 재사용
+            move_x = cached_move_x
+            h      = cached_move_y  # 저장해둔 높이값 불러오기
+            move_z = cached_move_z
+            
+        else:
+            move_x, move_z = get_move_position(my_pos_x, my_pos_z, enemy_pos_x, enemy_pos_z, range_10deg)
+            h = altitude_calculator(move_x, move_z) # 높이 계산
+            
+            # 적 좌표(Y포함)와 결과값(h포함) 저장
+            prev_enemy_x = enemy_pos_x
+            prev_enemy_y = enemy_pos_y  # 현재 적 Y 저장
+            prev_enemy_z = enemy_pos_z
+            
+            cached_move_x = move_x
+            cached_move_y = h           # 계산된 높이 저장
+            cached_move_z = move_z
+
+        new_fire_point = {
             "x": move_x,
             "y": h,
             "z": move_z
         }
-        print("즉시 불가. 이동 추천 좌표:", new_fire_point_pos)
-    
+        print("즉시 불가. 이동 추천 좌표:", new_fire_point)
+
     else:
         fire_command = can_fire_now
         if fire_command:
             print("사격 가능 : IBSM에게 사격 허가.")
         else:
             print("기준은 만족 못 했지만, 이동 필요까지는 아님 (정렬/안정 기다리는 상태).")
-    
-
 
 ##################### IBSM이 호출할 FCS의 엔드포인트 #######################
 @app.post("/get_fcs")
@@ -565,7 +569,7 @@ def get_fcs():
         "RF_weight" : rf_weight,            # 포신 상 / 하 세기, float형
         "fire_command" : fire_command,      # 사격 여부, bool형, True or False
         "fire_target_pos" : fire_target_pos,        # 사격 대상, dict형, {"x": 15.0, "y": 25.0, "z": 0.0}
-        "new_fire_point_pos" : new_fire_point_pos   # 현 위치 즉시 사격 불가 시 사격 가능 지점, dict형, {"x": 15.0, "y": 25.0, "z": 0.0}
+        "new_fire_point" : new_fire_point   # 현 위치 즉시 사격 불가 시 사격 가능 지점, dict형, {"x": 15.0, "y": 25.0, "z": 0.0}
     }
     #print("IBSM으로 보낼 데이터 : ", response_data)
 
@@ -575,4 +579,4 @@ def get_fcs():
 
 ################################ 메인매서드 ################################
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
