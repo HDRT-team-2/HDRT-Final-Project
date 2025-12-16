@@ -16,7 +16,9 @@ export const useDetectionStore = defineStore('detection', () => {
   const classCounts = computed(() => {
     const counts: Record<ObjectClassName, number> = {
       human: 0,
+      human_around: 0,
       tank: 0,
+      tank_around: 0,
       car: 0,
       truck: 0,
       mine: 0,
@@ -33,11 +35,11 @@ export const useDetectionStore = defineStore('detection', () => {
     return counts
   })
 
-  // 적 전차 수
-  const enemyTankCount = computed(() => classCounts.value.tank)
+  // 적 전차 수 (tank + tank_around)
+  const enemyTankCount = computed(() => classCounts.value.tank + classCounts.value.tank_around)
   
-  // 적 보병 수
-  const enemyInfantryCount = computed(() => classCounts.value.human)
+  // 적 보병 수 (human + human_around)
+  const enemyInfantryCount = computed(() => classCounts.value.human + classCounts.value.human_around)
   
   // 총 적 객체 수
   const enemyCount = computed(() => 
@@ -89,7 +91,7 @@ export const useDetectionStore = defineStore('detection', () => {
       class_name,
       position: {
         x: data.x,
-        y: data.z
+        y: data.y
       },
       time: new Date(),
       alive: data.alive
@@ -102,6 +104,7 @@ export const useDetectionStore = defineStore('detection', () => {
    * - 새로운 tracking_id → 새 객체 추가
    */
   function updateObject(data: DetectionResponse) {
+    console.log(`단일 업데이트: 객체 [${data.tracking_id}] 수신`)
     const existing = objects.value.find(
       obj => obj.tracking_id === data.tracking_id
     )
@@ -109,16 +112,16 @@ export const useDetectionStore = defineStore('detection', () => {
     if (existing) {
       // 기존 객체 위치 업데이트
       existing.position.x = data.x
-      existing.position.y = data.z
+      existing.position.y = data.y
       existing.alive = data.alive
       
-      console.log(`객체 업데이트 [${data.tracking_id}]:`, existing.class_name, existing.position)
+      // console.log(`객체 업데이트 [${data.tracking_id}]:`, existing.class_name, existing.position)
     } else {
       // 새 객체 추가
       const newObj = parseDetectionResponse(data)
       objects.value.push(newObj)
       
-      console.log(`새 객체 발견 [${data.tracking_id}]:`, newObj.class_name, newObj.position)
+      // console.log(`새 객체 발견 [${data.tracking_id}]:`, newObj.class_name, newObj.position)
     }
   }
 
@@ -134,6 +137,17 @@ export const useDetectionStore = defineStore('detection', () => {
     
     console.log(`배치 업데이트: ${dataList.length}개 객체`)
     dataList.forEach(data => updateObject(data))
+  }
+  
+  /**
+   * 객체의 alive 상태 변경
+   */
+  function setObjectAlive(trackingId: number, alive: boolean) {
+    const obj = objects.value.find(o => o.tracking_id === trackingId)
+    if (obj) {
+      obj.alive = alive
+      console.log(`객체 [${trackingId}] alive 상태 변경: ${alive}`)
+    }
   }
   
   /**
@@ -172,6 +186,7 @@ export const useDetectionStore = defineStore('detection', () => {
     // Actions
     updateObject,
     updateObjects,
+    setObjectAlive,
     clearObjects,
     reset
   }

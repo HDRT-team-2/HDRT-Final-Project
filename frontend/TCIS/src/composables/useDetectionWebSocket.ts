@@ -45,17 +45,13 @@ export function useDetectionWebSocket() {
         // }
         if (data.type === 'detection_update' && Array.isArray(data.objects)) {
           detectionStore.updateObjects(data.objects)
-          console.log(`탐지 수신: ${data.objects.length}개 객체`)
+          // console.log(`탐지 수신: ${data.objects.length}개 객체`)
         }
         // 단일 객체로 받는 경우 (하위 호환성)
         else if (data.type === 'detection_update' && data.object) {
           detectionStore.updateObject(data.object)
-          console.log(`탐지 수신: [${data.object.tracking_id}] ${data.object.class_id}`)
-        }
-        // 이전 형식 호환 (단일 객체)
-        else if (data.type === 'detection_update' && data.object) {
-          detectionStore.updateObject(data.object)
-          console.log(`탐지 수신: [${data.object.tracking_id}] ${data.object.class_id}`)
+          // console.log(`탐지 수신: [${data.object.tracking_id}] ${data.object.class_id}`)
+          // console.log(data.object)
         }
       },
       // onConnect

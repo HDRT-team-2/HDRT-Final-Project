@@ -15,7 +15,7 @@ export interface FireEvent {
 export interface FireResponse {
   target_tracking_id: number
   ally_id: string
-  class_id: number
+  // class_id: number
 }
 
 // 백엔드에서 오는 발사 메시지

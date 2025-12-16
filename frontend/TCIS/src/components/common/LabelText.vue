@@ -22,7 +22,7 @@ const formattedValue = computed(() => {
     <label class="text-sm font-medium text-gray-700 w-4">
       {{ label }}:
     </label>
-    <div class="w-[4rem] text-center text-sm font-mono py-1 text-gray-800 font-semibold">
+    <div class="w-[4rem] text-center text-sm font-mono text-gray-800 font-semibold">
       {{ formattedValue }}
     </div>
   </div>

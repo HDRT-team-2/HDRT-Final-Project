@@ -8,7 +8,7 @@ export const useMapStore = defineStore('map', () => {
 
   // 맵 ID에 따른 이미지 경로 매핑
   const mapImages: Record<MapId, string> = {
-    '1': new URL('@/assets/images/maps/01_forest_and_river_basemap_with_contours.jpg', import.meta.url).href,
+    '1': new URL('@/assets/images/maps/01_forest_and_river_basemap_with_contours.png', import.meta.url).href,
     '2': new URL('@/assets/images/maps/02_country_road_basemap_with_contours.png', import.meta.url).href,
     '3': new URL('@/assets/images/maps/03_wildness_dry_basemap_with_contours.png', import.meta.url).href,
     '4': new URL('@/assets/images/maps/04_simple_flat_basemap_with_contours-format.jpg', import.meta.url).href

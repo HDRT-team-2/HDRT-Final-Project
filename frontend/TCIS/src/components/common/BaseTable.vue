@@ -4,6 +4,8 @@ interface Column {
   label: string;
   align?: 'left' | 'center' | 'right';
   width?: string;
+  sortable?: boolean;
+  sortOrder?: 'asc' | 'desc' | null;
 }
 
 interface Props {
@@ -23,6 +25,16 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'sm',
   maxHeight: undefined
 });
+
+const emit = defineEmits<{
+  sort: [columnKey: string]
+}>();
+
+const handleSort = (column: Column) => {
+  if (column.sortable) {
+    emit('sort', column.key);
+  }
+};
 
 const getSizeClass = () => {
   switch (props.size) {
@@ -56,12 +68,21 @@ const getAlignClass = (align?: string) => {
               getAlignClass(column.align),
               {
                 'rounded-l-lg': idx === 0,
-                'rounded-r-lg': idx === columns.length - 1
+                'rounded-r-lg': idx === columns.length - 1,
+                'cursor-pointer hover:bg-rotem-200 transition-colors select-none': column.sortable
               }
             ]"
             :style="column.width ? { width: column.width } : {}"
+            @click="handleSort(column)"
           >
-            {{ column.label }}
+            <div class="flex items-center justify-center gap-1">
+              <span>{{ column.label }}</span>
+              <span v-if="column.sortable" class="text-[10px]">
+                <span v-if="column.sortOrder === 'asc'">▲</span>
+                <span v-else-if="column.sortOrder === 'desc'">▼</span>
+                <span v-else class="text-gray-400">▼</span>
+              </span>
+            </div>
           </th>
         </tr>
       </thead>

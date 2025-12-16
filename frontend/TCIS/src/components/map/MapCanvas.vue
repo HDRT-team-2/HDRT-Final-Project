@@ -15,6 +15,7 @@ import DetectedObjects from './DetectedObjects.vue'
 const mapStore = useMapStore()
 const { currentMapImage } = storeToRefs(mapStore)
 const statusReportStore = useStatusReportStore()
+const { missionReport } = storeToRefs(statusReportStore)
 const { sendTarget } = useTargetCommand()
 
 // 'a' 키 눌림 상태 추적
@@ -93,7 +94,7 @@ function handleContextMenu(event: MouseEvent) {
   const coord = svgToCoord(svgX, svgY)
   
   // 'a'키 눌린 상태에 따라 mission 결정
-  const mission = isAKeyPressed.value ? 'attack_n_search' : 'defend'
+  const mission = isAKeyPressed.value ? 'combat' : 'defense'
   
   // mission-status store에 명령 target 설정
   statusReportStore.setCommandTarget(coord.x, coord.y, mission)
@@ -138,20 +139,20 @@ function handleContextMenu(event: MouseEvent) {
     <!-- 그리드 오버레이 -->
     <rect width="100%" height="100%" fill="url(#grid)" />
     
-    <!-- 포물선 애니메이션 -->
-    <TrajectoryArcs :my-tanks="myTanks" :coord-to-svg="coordToSvg" />
+    <!-- 탐지된 객체들 -->
+    <DetectedObjects :objects="objects" :coord-to-svg="coordToSvg" />
     
-    <!-- 목표 위치 (있으면) -->
+    <!-- 목표 위치 (장애물보다 위에 표시) -->
     <GoalIcon
       v-if="target"
       :x="coordToSvg(target.x, target.y).x"
       :y="coordToSvg(target.x, target.y).y"
-      :size="8"
-      :is-danger="commandTarget?.mission === 'attack_n_search'"
+      :size="18"
+      :is-danger="missionReport.mission === '공격'"
     />
     
-    <!-- 탐지된 객체들 -->
-    <DetectedObjects :objects="objects" :coord-to-svg="coordToSvg" />
+    <!-- 포물선 애니메이션 (객체들보다 위에 표시) -->
+    <TrajectoryArcs :my-tanks="myTanks" :coord-to-svg="coordToSvg" />
     
     <!-- 내 전차들 위치 (마지막에 그려서 맨 위에 표시) -->
     <g v-for="tank in myTanks" :key="tank.tank_id">

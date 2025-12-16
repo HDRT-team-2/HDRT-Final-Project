@@ -55,7 +55,7 @@ const handleBlur = () => {
     }
     
     if (!isNaN(x) && !isNaN(y)) {
-      statusReportStore.setCommandTarget(x, y, 'defend')
+      statusReportStore.setCommandTarget(x, y, 'defense')
     }
   }
 }

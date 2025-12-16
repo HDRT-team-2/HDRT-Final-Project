@@ -3,6 +3,7 @@ import BaseTable from '@/components/common/BaseTable.vue'
 import Badge from '@/components/common/Badge.vue'
 import type { FireEvent } from '@/types/fire'
 import { CLASS_NAME_KR } from '@/types/detection'
+import { ref, computed } from 'vue'
 
 // Props 정의
 interface Props {
@@ -11,12 +12,36 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const columns = [
-  { key: 'time', label: '시간', align: 'center' as const, width: '100px' },
+// 시간 정렬 상태 (기본값: desc = 최신 순)
+const timeSortOrder = ref<'asc' | 'desc'>('desc')
+
+// 정렬된 fires 배열 (시간 기준, 최신이 위로)
+const sortedFires = computed(() => {
+  const firesCopy = [...props.fires]
+  
+  if (timeSortOrder.value === 'asc') {
+    // 오름차순: 오래된 것이 위로 (시간 작은 것 먼저)
+    return firesCopy.sort((a, b) => a.firedAt.getTime() - b.firedAt.getTime())
+  } else {
+    // 내림차순: 최신 것이 위로 (시간 큰 것 먼저) - 기본값
+    return firesCopy.sort((a, b) => b.firedAt.getTime() - a.firedAt.getTime())
+  }
+})
+
+// BaseTable의 sort 이벤트 핸들러
+const handleSort = (columnKey: string) => {
+  if (columnKey === 'time') {
+    timeSortOrder.value = timeSortOrder.value === 'asc' ? 'desc' : 'asc'
+  }
+}
+
+// 컬럼 정의
+const columns = computed(() => [
+  { key: 'time', label: '시간', align: 'center' as const, width: '100px', sortable: true, sortOrder: timeSortOrder.value },
   { key: 'ally', label: '아군', align: 'center' as const, width: '80px' },
   { key: 'enemy', label: '적군', align: 'center' as const, width: '120px' },
   { key: 'result', label: '사격결과', align: 'center' as const, width: '80px' }
-]
+])
 
 // 시간 포맷 (YY/MM/DD<br/>HH:MM:SS)
 const formatTime = (date: Date) => {
@@ -43,16 +68,17 @@ const formatEnemy = (fire: any) => {
 <template>
   <BaseTable 
     :columns="columns" 
-    :data="props.fires"
+    :data="sortedFires"
     :striped="false"
     :bordered="true"
     :hover="false"
     size="sm"
+    @sort="handleSort"
   >
-    <!-- 시간 컴럼 -->
-    <template #time="{ row }">
-      <span class="font-mono leading-tight" v-html="formatTime(row.firedAt)"></span>
-    </template>
+      <!-- 시간 컬럼 -->
+      <template #time="{ row }">
+        <span class="font-mono leading-tight" v-html="formatTime(row.firedAt)"></span>
+      </template>
     
     <!-- 아군 컴럼 -->
     <template #ally="{ row }">

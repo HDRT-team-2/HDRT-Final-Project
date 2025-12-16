@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<Props>(), {
 // 원본 SVG는 48x48, 중심이 24,24
 // size 10을 기준으로 스케일 조정
 const scale = props.size / 10
-const backgroundRadius = 24 * scale / 2.4  // 배경 원을 적절히 축소
+const backgroundRadius = 34 * scale / 2.4  // 배경 원을 적절히 축소
 const color = '#FF0000'
 
 // 원본 SVG의 중심이 (24, 24)이므로, props.x, props.y를 중심으로 재배치

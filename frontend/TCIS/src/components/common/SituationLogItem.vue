@@ -9,7 +9,7 @@ const props = defineProps<{ event: SituationEvent }>()
 // 카테고리 결정 (적/아군/기타) - fire도 className 기반으로 분류
 const category = computed<'enemy' | 'ally' | 'other'>(() => {
   const className = props.event.className
-  if (className === 'tank' || className === 'human') return 'enemy'
+  if (className === 'tank' || className === 'tank_around' || className === 'human' || className === 'human_around') return 'enemy'
   // 아군은 추후 추가 (현재는 없음)
   // if (className === 'ally_tank' || className === 'ally_human') return 'ally'
   return 'other' // car, truck, rock_small, rock_large 등

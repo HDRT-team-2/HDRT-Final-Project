@@ -47,63 +47,102 @@ function createArcPath(startX: number, startY: number, endX: number, endY: numbe
   return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`
 }
 
+// 이미 처리한 fire ID를 추적
+const processedFireIds = ref<Set<string>>(new Set())
+
 // fire 이벤트 감지 및 포물선 생성
-watch(fires, (newFires, oldFires) => {
-  // 새로 추가된 fire 이벤트 찾기
-  const addedFires = newFires.filter(newFire => 
-    !oldFires?.some(oldFire => oldFire.id === newFire.id)
-  )
+watch(fires, (newFires) => {
+  // 아직 처리하지 않은 fire 이벤트 찾기
+  const addedFires = newFires.filter(fire => !processedFireIds.value.has(fire.id))
   
   addedFires.forEach(fire => {
-    // ally_id로 아군 위치 찾기
-    const allyTank = props.myTanks.find(tank => tank.tank_id === fire.ally_id)
-    if (!allyTank) {
-      console.warn(`아군 탱크 [${fire.ally_id}]를 찾을 수 없음`)
-      return
-    }
+    // 처리 목록에 추가
+    processedFireIds.value.add(fire.id)
     
-    // target_tracking_id로 적 위치 찾기
-    const targetObject = objects.value.find(obj => obj.tracking_id === fire.target_tracking_id)
-    if (!targetObject) {
-      console.warn(`대상 객체 [${fire.target_tracking_id}]를 찾을 수 없음`)
-      return
-    }
+    console.log('[TrajectoryArcs] Fire 이벤트:', { 
+      ally_id: fire.ally_id, 
+      target_tracking_id: fire.target_tracking_id,
+      myTanks: props.myTanks.map(t => ({ tank_id: t.tank_id, x: t.x, y: t.y }))
+    })
     
-    // 좌표를 SVG 좌표로 변환
-    const startSvg = props.coordToSvg(allyTank.x, allyTank.y)
-    const endSvg = props.coordToSvg(targetObject.position.x, targetObject.position.y)
-    
-    // 포물선 경로 생성
-    const path = createArcPath(startSvg.x, startSvg.y, endSvg.x, endSvg.y)
-    
-    // 애니메이션 추가
-    const arc: TrajectoryArc = {
-      id: fire.id,
-      path,
-      opacity: 1
-    }
-    
-    activeArcs.value.push(arc)
-    
-    // 1.5초 후 페이드아웃 시작
-    setTimeout(() => {
-      const arcIndex = activeArcs.value.findIndex(a => a.id === arc.id)
-      if (arcIndex !== -1) {
-        // 페이드아웃 애니메이션 (0.5초)
-        const fadeInterval = setInterval(() => {
-          const currentArc = activeArcs.value[arcIndex]
-          if (currentArc) {
-            currentArc.opacity -= 0.1
-            if (currentArc.opacity <= 0) {
-              clearInterval(fadeInterval)
-              activeArcs.value.splice(arcIndex, 1)
-            }
-          } else {
-            clearInterval(fadeInterval)
-          }
-        }, 50)
+    // 포물선 생성 시도 함수
+    const tryCreateArc = () => {
+      // ally_id로 아군 위치 찾기
+      const allyTank = props.myTanks.find(tank => String(tank.tank_id) === String(fire.ally_id))
+      if (!allyTank) {
+        console.warn('[TrajectoryArcs] 아군 탱크를 찾을 수 없음. ally_id:', fire.ally_id)
+        return false
       }
-    }, 1500)
+      console.log('[TrajectoryArcs] 아군 탱크 찾음:', allyTank)
+      
+      // target_tracking_id로 적 위치 찾기 (string으로 비교)
+      const targetObject = objects.value.find(obj => String(obj.tracking_id) === String(fire.target_tracking_id))
+      if (!targetObject) {
+        console.warn('[TrajectoryArcs] 타겟 객체를 찾을 수 없음. target_tracking_id:', fire.target_tracking_id)
+        return false
+      }
+      console.log('[TrajectoryArcs] 타겟 객체 찾음:', targetObject)
+    
+      // 좌표를 SVG 좌표로 변환
+      const startSvg = props.coordToSvg(allyTank.x, allyTank.y)
+      const endSvg = props.coordToSvg(targetObject.position.x, targetObject.position.y)
+      
+      // 포물선 경로 생성
+      const path = createArcPath(startSvg.x, startSvg.y, endSvg.x, endSvg.y)
+      
+      console.log('[TrajectoryArcs] 포물선 생성:', {
+        from: startSvg,
+        to: endSvg,
+        path
+      })
+      
+      // 애니메이션 추가
+      const arc: TrajectoryArc = {
+        id: fire.id,
+        path,
+        opacity: 1
+      }
+      
+      activeArcs.value.push(arc)
+      console.log('[TrajectoryArcs] activeArcs 추가됨. 현재 개수:', activeArcs.value.length)
+      
+      // 0.7초 후 페이드아웃 시작
+      setTimeout(() => {
+        const arcIndex = activeArcs.value.findIndex(a => a.id === arc.id)
+        if (arcIndex !== -1) {
+          // 페이드아웃 애니메이션 (0.5초)
+          const fadeInterval = setInterval(() => {
+            const currentArc = activeArcs.value[arcIndex]
+            if (currentArc) {
+              currentArc.opacity -= 0.1
+              if (currentArc.opacity <= 0) {
+                clearInterval(fadeInterval)
+                activeArcs.value.splice(arcIndex, 1)
+              }
+            } else {
+              clearInterval(fadeInterval)
+            }
+          }, 50)
+        }
+      }, 700)
+      
+      return true
+    }
+    
+    // 즉시 시도
+    if (!tryCreateArc()) {
+      // 실패하면 50ms 후 재시도 (최대 3회)
+      let retryCount = 0
+      const retryInterval = setInterval(() => {
+        retryCount++
+        if (tryCreateArc() || retryCount >= 3) {
+          clearInterval(retryInterval)
+          if (retryCount >= 3) {
+            console.error('[TrajectoryArcs] 포물선 생성 실패 (3회 재시도)', fire)
+          }
+        }
+      }, 50)
+    }
   })
 }, { deep: true })
 </script>

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import type { MissionReport, OperationMission } from '@/types/mission-status'
 import type { BackendMissionType } from '@/types/position'
 
@@ -13,32 +13,20 @@ function translateMission(backendMission: BackendMissionType): OperationMission 
   return missionMap[backendMission]
 }
 
-// 미션별 기본 objective
-function getDefaultObjective(mission: OperationMission): string {
-  const objectiveMap: Record<OperationMission, string> = {
-    '방어': '현재 전면전 개시 2일차로 아군, 적군간 대화력전이 실시되고 있는 상황.\n적 기갑부대는 남방한계선 북측 20km 지점까지 남하하였으며 아군은 공격개시선 남측 10km 지점에서 방어진지 구축 중.\n아군의 임무는 남하하는 적 기갑부대를 저지하고 현 위치를 고수하는 것.',
-    '공격': '현재 전면전 개시 2일차로 아군, 적군간 대화력전이 실시되고 있는 상황.\n적 기갑부대는 남방한계선 북측 20km 지점까지 남하하였으며 아군은 공격개시선 남측 10km 지점에서 공격명령 대기중.\n아군의 임무는 남하하는 적 기갑부대를 격멸하고 목표지점을 확보하는 것.',
-    '수색': '현재 전면전 개시 2일차로 아군, 적군간 대화력전이 실시되고 있는 상황.\n적 기갑부대는 남방한계선 북측 20km 지점까지 남하하였으며 정확한 위치 파악이 필요한 상황.\n아군의 임무는 지정된 지역을 수색하여 적의 위치와 병력을 파악하는 것.'
-  }
-  return objectiveMap[mission]
-}
-
 export const useStatusReportStore = defineStore('statusReport', () => {
   const missionReport = ref<MissionReport>({
     operationName: '천둥',
     commander: '신중건',
-    mission: '방어',
-    objective: '현재 전면전 개시 2일차로 아군, 적군간 대화력전이 실시되고 있는 상황.\n적 기갑부대는 남방한계선 북측 20km 지점까지 남하하였으며 아군은 공격개시선 남측 10km 지점에서 공격명령 대기중.\n아군의 임무는 남하하는 적 기갑부대를 격멸하고 목표지점인 00을 확보하는 것.',
+    mission: '',
+    objective: '적 기갑여단이 철원평야를 가로지르며 고속 돌파를 시도하고 있다.\n만약 이 돌파를 허용하면, 주요 도로와 철도 모두 적에게 점령되어 군 보급 작전에 심각한 제한 사항이 발생한다.\n00전차대대는 백마고지 남측 능선에서 적의 돌파를 차단하라.',
     targetPosition: null
   })
+  
+  // 백엔드에서 임무를 받았는지 여부
+  const hasMissionReceived = ref(false)
 
   // 프론트에서 명령한 목표 (API 전송용)
   const commandTarget = ref<{ x: number; y: number; mission: import('@/types/position').MissionType } | null>(null)
-
-  // mission 변경 시 자동으로 objective 업데이트
-  watch(() => missionReport.value.mission, (newMission) => {
-    missionReport.value.objective = getDefaultObjective(newMission)
-  })
 
   const updateStatusReport = (data: Partial<MissionReport>) => {
     missionReport.value = { ...missionReport.value, ...data }
@@ -59,6 +47,7 @@ export const useStatusReportStore = defineStore('statusReport', () => {
   const setMissionFromBackend = (backendMission: BackendMissionType) => {
     const koreanMission = translateMission(backendMission)
     missionReport.value.mission = koreanMission
+    hasMissionReceived.value = true
   }
 
   const setObjective = (objective: string) => {
@@ -80,6 +69,7 @@ export const useStatusReportStore = defineStore('statusReport', () => {
   return {
     missionReport,
     commandTarget,
+    hasMissionReceived,
     updateStatusReport,
     setOperationName,
     setCommander,

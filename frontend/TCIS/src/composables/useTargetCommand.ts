@@ -26,24 +26,19 @@ export function useTargetCommand() {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
       const api = new ApiService({ baseURL: API_URL })
       
-      // 요청: 프론트 MissionType ('defend' | 'attack_n_search')
+      // 요청: 프론트 MissionType ('defense' | 'combat')
       // 응답: 백엔드 BackendMissionType ('combat' | 'search' | 'defense')
+      console.log('목표 전송 요청:', target)
       const res = await api.post<{ x: number; y: number; mission: BackendMissionType }>('/api/target', {
         x: target.x,
         z: target.y,
         mission: target.mission as MissionType
       })
-      
-      console.log('백엔드 응답:', res.data)
-      
+            
       // 응답 데이터로 mission status store 업데이트
       if (res.data) {
-        // mission status store 업데이트 (백엔드에서 확정된 미션 + 목표 위치)
-        // MissionStatusReport에서 표시, WebSocket으로도 계속 업데이트됨
-        statusReportStore.setMissionFromBackend(res.data.mission)
-        statusReportStore.setTargetPosition(res.data.x, res.data.y)
         
-        console.log(`백엔드 확정 - 위치: (${res.data.x}, ${res.data.y}), 미션: ${res.data.mission}`)
+        console.log('목표 전송 성공:', res.data)
       }
       
       return true

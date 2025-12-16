@@ -5,7 +5,7 @@ export interface Coordinate {
 }
 
 // 미션 타입 (백엔드와 통신용)
-export type MissionType = 'defend' | 'attack_n_search'
+export type MissionType = 'defense' | 'combat'
 
 // 백엔드 응답 미션 타입
 export type BackendMissionType = 'combat' | 'search' | 'defense'
