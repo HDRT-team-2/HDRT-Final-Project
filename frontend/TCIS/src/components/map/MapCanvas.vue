@@ -139,9 +139,6 @@ function handleContextMenu(event: MouseEvent) {
     <!-- 그리드 오버레이 -->
     <rect width="100%" height="100%" fill="url(#grid)" />
     
-    <!-- 포물선 애니메이션 -->
-    <TrajectoryArcs :my-tanks="myTanks" :coord-to-svg="coordToSvg" />
-    
     <!-- 탐지된 객체들 -->
     <DetectedObjects :objects="objects" :coord-to-svg="coordToSvg" />
     
@@ -153,6 +150,9 @@ function handleContextMenu(event: MouseEvent) {
       :size="18"
       :is-danger="missionReport.mission === '공격'"
     />
+    
+    <!-- 포물선 애니메이션 (객체들보다 위에 표시) -->
+    <TrajectoryArcs :my-tanks="myTanks" :coord-to-svg="coordToSvg" />
     
     <!-- 내 전차들 위치 (마지막에 그려서 맨 위에 표시) -->
     <g v-for="tank in myTanks" :key="tank.tank_id">

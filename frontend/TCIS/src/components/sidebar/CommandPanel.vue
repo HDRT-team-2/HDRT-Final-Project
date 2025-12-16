@@ -252,22 +252,32 @@ const handleSingleCommand = async (result: any) => {
     
     // config 타입이면 작전명/지휘관 변경
     if (result.type === 'config') {
+      const changes: string[] = [];
       if (result.operationName) {
         statusReportStore.setOperationName(result.operationName);
+        changes.push(`작전명: ${result.operationName}`);
       }
       if (result.commander) {
         statusReportStore.setCommander(result.commander);
+        changes.push(`지휘관: ${result.commander}`);
+      }
+      
+      // message가 없으면 변경 사항으로 메시지 생성
+      if (!result.message && changes.length > 0) {
+        result.message = changes.join(', ') + ' 변경';
       }
     }
     
-    // LLM 응답 추가
-    commandHistory.value.push({
-      id: commandIdCounter++,
-      command: result.message,
-      timestamp,
-      type: result.type === 'error' ? 'error' : 'output'
-    });
-    scrollToBottom();
+    // LLM 응답 추가 (message가 있을 때만)
+    if (result.message) {
+      commandHistory.value.push({
+        id: commandIdCounter++,
+        command: result.message,
+        timestamp,
+        type: result.type === 'error' ? 'error' : 'output'
+      });
+      scrollToBottom();
+    }
 
     // command 타입이면 임무 변경 API 호출
     if (result.type === 'command' && result.x !== undefined && result.y !== undefined && result.mission) {
